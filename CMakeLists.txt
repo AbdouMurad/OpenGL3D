@@ -11,6 +11,13 @@ find_package(glm CONFIG REQUIRED)
 
 add_executable(OpenGL3D
     src/main.cpp
+    src/Buffer.cpp
+    headers/Buffer.h
+    headers/gl_core.h
+ "headers/shaderClass.h" "src/shaderClass.cpp" "Core/stb.cpp" "headers/Engine.h")
+
+target_include_directories(OpenGL3D PRIVATE
+    ${CMAKE_SOURCE_DIR}/headers
 )
 
 target_link_libraries(OpenGL3D PRIVATE
