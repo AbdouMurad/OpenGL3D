@@ -8,16 +8,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(Stb REQUIRED)
 
 add_executable(OpenGL3D
     src/main.cpp
-    src/Buffer.cpp
-    headers/Buffer.h
-    headers/gl_core.h
- "headers/shaderClass.h" "src/shaderClass.cpp" "Core/stb.cpp" "headers/Engine.h")
+    Render/Buffer.cpp
+    Render/ShaderClass.cpp
+    Core/Engine.cpp
+    Core/Input.cpp
+    Core/Time.cpp
+    Core/Window.cpp
+ )
 
 target_include_directories(OpenGL3D PRIVATE
-    ${CMAKE_SOURCE_DIR}/headers
+    ${CMAKE_SOURCE_DIR}
+    ${Stb_INCLUDE_DIR}
 )
 
 target_link_libraries(OpenGL3D PRIVATE

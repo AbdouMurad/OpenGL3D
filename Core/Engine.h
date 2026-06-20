@@ -19,7 +19,7 @@ public:
 
 class Application {
 public:
-	Application(int width, int height, std::string applciationName)
+	Application(int width, int height, std::string applciationName);
 	void run(Game& game);
 
 private:
