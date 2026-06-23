@@ -1,13 +1,11 @@
 #pragma once
 
-#include "gl_core.h"
+#include "Core/gl_core.h"
 
 class Time {
 public:
 	static void update();
-	
 	static float deltaTime();
-
 
 private:
 	static float dt;

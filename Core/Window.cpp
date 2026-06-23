@@ -5,26 +5,26 @@ bool Window::init(int w, int h, std::string windowName, bool fullscreen) {
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
 	if (fullscreen) {
-		window = glfwCreateWindow(mode->width, mode->height, windowName, monitor, NULL);
+		handler = glfwCreateWindow(mode->width, mode->height, windowName.c_str(), monitor, NULL);
 		height = mode->height;
 		width = mode->width;
 	}
 	else {
-		window = glfwCreateWindow(w, h, windowName, NULL, NULL);
+		handler = glfwCreateWindow(w, h, windowName.c_str(), NULL, NULL);
 		width = w;
 		height = h;
 	}
-	if (window == NULL) {
+	if (handler == NULL) {
 		std::cout << "Failed to creatWe GLFW window" << std::endl;
 		glfwTerminate();
 		return false;
 	}
-	glfwMakeContextCurrent(window);
+	glfwMakeContextCurrent(handler);
 
 	return true;
 }
 void Window::swapBuffers() {
-	glfwSwapBuffers();
+	glfwSwapBuffers(handler);
 }
 bool Window::shouldClose() {
 	return glfwWindowShouldClose(handler);

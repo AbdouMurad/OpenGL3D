@@ -1,15 +1,22 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "gl_core.h"
-
 #include <vector>
+
+#include "Core/gl_core.h"
+
+struct Vertex {
+	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec3 color;
+	glm::vec2 texUV;
+};
 
 class VBO {
 public:
 	GLuint ID;
 	VBO(); //only used for renderer
-	void init(GLfloat* vertices, GLsizeiptr size);
+	void init(std::vector<Vertex>& vertices);
 
 	void Bind();
 	void Unbind();
@@ -20,7 +27,7 @@ class EBO {
 public:
 	GLuint ID;
 	EBO(); //only used to init renderer
-	void init(GLuint* indices, GLsizeiptr size);
+	void init(std::vector<GLuint>& indices);
 
 	void Bind();
 	void Unbind();

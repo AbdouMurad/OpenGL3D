@@ -2,6 +2,7 @@
 
 #include "gl_core.h"
 #include <string>
+#include <iostream>
 
 class Window {
 public:

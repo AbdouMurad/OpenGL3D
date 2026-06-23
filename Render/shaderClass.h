@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gl_core.h"
+#include "Core/gl_core.h"
 #include <string>
 #include <fstream>
 #include <sstream>

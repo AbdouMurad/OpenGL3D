@@ -1,4 +1,4 @@
-#include "Input.h"
+#include "Core/Input.h"
 
 GLFWwindow* Input::window = nullptr;
 
