@@ -14,11 +14,22 @@ add_executable(OpenGL3D
     src/main.cpp
     Render/Buffer.cpp
     Render/ShaderClass.cpp
+    Render/Texture.cpp
+    Render/Model.cpp
+    Render/Renderer.cpp
+    Render/stb.cpp
+
     Core/Engine.cpp
     Core/Input.cpp
     Core/Time.cpp
     Core/Window.cpp
-  "Render/Texture.h" "Render/Texture.cpp" "Render/Model.h" "Core/Camera.h" "Render/Model.cpp" "Render/Renderer.h" "Render/Renderer.cpp" "Core/Camera.cpp" )
+    Core/Camera.cpp
+
+    Render/Texture.h
+    Render/Model.h
+    Render/Renderer.h
+    Core/Camera.h
+)
 
 target_include_directories(OpenGL3D PRIVATE
     ${CMAKE_SOURCE_DIR}
