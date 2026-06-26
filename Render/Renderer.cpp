@@ -25,8 +25,7 @@ void Renderer::Draw(Mesh& mesh, Shader& shader, Camera& camera) {
 	for (unsigned int i = 0; i < mesh.textures.size(); i++)
 	{
 		std::string num;
-		//std::string type = mesh.textures[i].type;
-		std::string type = "diffuse";
+		std::string type = mesh.textures[i].type;
 		if (type == "diffuse") {
 			num = std::to_string(numDiffuser++);
 		}
