@@ -14,10 +14,11 @@ void Application::run(Game& game) {
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	glViewport(0, 0, width, height);
 
-	//init renderer
+	renderer.init();
+
 
 	Input::Init(window.getHandler());
-
+	game.start(width, height);
 	while (!window.shouldClose()) {
 		float dt = Time::deltaTime();
 		Input::Update();
@@ -26,7 +27,7 @@ void Application::run(Game& game) {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		game.update(dt);
+		game.update(dt, renderer);
 
 		glfwSwapBuffers(window.getHandler());
 	}

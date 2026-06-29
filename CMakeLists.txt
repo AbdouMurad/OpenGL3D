@@ -41,3 +41,9 @@ target_link_libraries(OpenGL3D PRIVATE
     glad::glad
     glm::glm
 )
+
+add_custom_command(TARGET OpenGL3D POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets
+        $<TARGET_FILE_DIR:OpenGL3D>/assets
+)

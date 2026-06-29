@@ -6,13 +6,14 @@
 #include "Window.h"
 #include "Input.h"
 #include "Time_.h"
+#include "Render/Renderer.h"
 
 class Game {
 private:
 	
 public:
-	virtual void start() {};
-	virtual void update(float dt) {};
+	virtual void start(int width, int height) {};
+	virtual void update(float dt, Renderer& renderer) {};
 	virtual void shutdown() {};
 	//virtual void render(Renderer& renderer) {};
 };
@@ -30,7 +31,7 @@ private:
 	int height = 720;
 
 	Window window;
-	//Renderer renderer;
+	Renderer renderer;
 
 	float deltaTime = 0.0f;
 	float lastFrame = 0.0f;

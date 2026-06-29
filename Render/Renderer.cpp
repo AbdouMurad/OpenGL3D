@@ -1,18 +1,16 @@
 #include "Renderer.h"
 
-Renderer::Renderer() 
-	:	defaultShader("default.vert", "default.frag") {}
+Renderer::Renderer() {}
 
-Renderer::~Renderer() {
-	defaultShader.Delete();
-}
+Renderer::~Renderer() {}
 
 Shader* Renderer::getShader(ShaderType shaderType) {
-	switch (shaderType) {
-	case ShaderType::DEFAULT:
-		return &defaultShader;
-	} 
-	return nullptr;
+	return shaders[shaderType].get();
+}
+
+bool Renderer::init() {
+	shaders[ShaderType::DEFAULT] = std::make_unique<Shader>("assets/shaders/default.vert", "assets/shaders/default.frag");
+	return true;
 }
 
 void Renderer::Draw(Mesh& mesh, Shader& shader, Camera& camera) {
