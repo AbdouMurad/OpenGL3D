@@ -34,8 +34,13 @@ void Renderer::Draw(Mesh& mesh, Shader& shader, Camera& camera) {
 		mesh.textures[i].texUnit(shader, (type + num).c_str(), i);
 		mesh.textures[i].Bind();
 	}
+
+	glm::mat4 objectModel = glm::mat4(1.0f);
+	objectModel = glm::translate(objectModel, mesh.position);
+
 	shader.setVec3("camPos", camera.Position);
 	shader.setMat4("camMatrix", camera.cameraMatrix);
+	shader.setMat4("model", objectModel);
 
 	glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
 }

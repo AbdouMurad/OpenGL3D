@@ -1,14 +1,12 @@
 #include "Model.h"
 
-Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture>& textures) {
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture>& textures) 
+	: position({ 0.0f, 0.0f, -1.0f }) {
 	Mesh::vertices = vertices;
 	Mesh::indices = indices;
 	Mesh::textures = textures;
 
 	VAO.Bind();
-	
-	VBO vbo;
-	EBO ebo;
 
 	vbo.init(vertices);
 	ebo.init(indices);

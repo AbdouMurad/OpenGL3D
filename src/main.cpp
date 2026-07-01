@@ -4,7 +4,6 @@ namespace fs = std::filesystem;
 class MyGame : public Game {
 public:
     void start(int width, int height) override {
-        camera = Camera(width, height, { 0,0,0 });
         
         // Vertices coordinates
         Vertex vertices[] = { //               COORDINATES           /            COLORS          /           NORMALS         /       TEXTURE COORDINATES    //
@@ -32,16 +31,20 @@ public:
         std::vector <Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
         std::vector <GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
         std::vector <Texture> tex(textures, textures + sizeof(textures) / sizeof(Texture));
-        Mesh mesh = Mesh(verts, ind, tex);
-        floor = &mesh;
+        floor = new Mesh(verts, ind, tex);
+        
         camera.setViewport(width, height);
     };
     void update(float dt, Renderer& renderer) override {
+        camera.updateMatrix(45.0f, 0.1f, 100.0f);
         renderer.Draw(*floor, *renderer.getShader(ShaderType::DEFAULT), camera);
-    };
-    void shutdown() override {};
 
-    MyGame() : camera(0, 0, {0, 0, 0}) {};
+    };
+    void shutdown() override {
+        delete floor;
+    };
+
+    MyGame() : camera(0, 0, {0, 1, 2}) {};
     Mesh* floor = nullptr;
     Camera camera;
 
@@ -51,7 +54,7 @@ public:
 
 int main() {
     MyGame game;
-    Application app = Application(1280, 720, "GAME");
+    Application app = Application(1980, 1080, "GAME");
     app.run(game);
     return 0;
 }

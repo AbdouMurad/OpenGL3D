@@ -15,10 +15,6 @@ void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {
 	cameraMatrix = projection * view;
 }
 
-GLfloat* Camera::getMatrix() {
-	return glm::value_ptr(cameraMatrix);
-}
-
 void Camera::setViewport(int width, int height) {
 	Camera::width = width;
 	Camera::height = height;

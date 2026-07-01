@@ -10,7 +10,7 @@
 #include<glm/gtx/vector_angle.hpp>
 
 #include "Render/shaderClass.h"
-
+#include "Core/Input.h"
 class Camera {
 public:
 	glm::vec3 Position;
@@ -25,5 +25,6 @@ public:
 
 	void setViewport(int width, int height);
 	void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
-	GLfloat* getMatrix();
+	
+
 };

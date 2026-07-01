@@ -11,6 +11,7 @@ public:
 	GLuint ID;
 	const char* type;
 	GLuint unit;
+
 	~Texture();
 	Texture(const char* image, const char* texType, GLenum slot, GLenum format, GLenum pixelType);
 

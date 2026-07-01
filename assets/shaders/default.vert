@@ -6,7 +6,7 @@ layout (location = 2) in vec3 aColor;
 layout (location = 3) in vec2 aTex;
 
 out vec3 crntPos;
-out vec3 Nomral;
+out vec3 Normal;
 out vec3 color;
 out vec2 texCoord;
 
@@ -15,9 +15,9 @@ uniform mat4 model;
 
 void main() {
 	crntPos = vec3(model * vec4(aPos, 1.0));
-	Normal = aNomral;
+	Normal = aNormal;
 	color = aColor;
 	texCoord = aTex;
 
-	gl_position = camMatrix * vec4(crntPos, 1.0);
+	gl_Position = camMatrix * vec4(crntPos, 1.0);
 }
