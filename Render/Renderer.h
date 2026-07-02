@@ -4,13 +4,11 @@
 
 #include "Model.h" //TODO: Move model to its own component folder?
 #include "Core/Camera.h"
+#include "Material.h"
 #include "shaderClass.h"
+#include "ShaderTypes.h"
 
-//Keep COUNT as last so ShaderType::COUNT returns count of enums
-enum ShaderType {
-	DEFAULT,
-	COUNT
-};
+
 
 class Renderer {
 public:
@@ -20,6 +18,6 @@ public:
 	Renderer();
 	bool init();
 	Shader* getShader(ShaderType shaderType);
-	void Draw(Mesh& mesh, Shader& shader, Camera& camera);
+	void Draw(Mesh& mesh, Material& material, Camera& camera);
 
 };

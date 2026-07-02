@@ -8,10 +8,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
-find_package(Stb REQUIRED)
+
 
 add_executable(OpenGL3D
     src/main.cpp
+    Render/Texture.h
+    Render/Model.h
+    Render/Renderer.h
+    Render/Material.h
+    Render/Material.cpp
+    Render/ShaderTypes.h
     Render/Buffer.cpp
     Render/ShaderClass.cpp
     Render/Texture.cpp
@@ -24,10 +30,6 @@ add_executable(OpenGL3D
     Core/Time.cpp
     Core/Window.cpp
     Core/Camera.cpp
-
-    Render/Texture.h
-    Render/Model.h
-    Render/Renderer.h
     Core/Camera.h
 )
 

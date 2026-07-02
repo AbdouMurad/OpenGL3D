@@ -4,13 +4,19 @@ Texture::Texture(const char* image, const char* texType, GLenum slot, GLenum for
 {
 	// Assigns the type of the texture ot the texture object
 	type = texType;
-
+	std::cout << "Loading texture: " << image << std::endl;
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
 	stbi_set_flip_vertically_on_load(true);
 	// Reads the image from a file and stores it in bytes
 	unsigned char* bytes = stbi_load(image, &widthImg, &heightImg, &numColCh, 0);
+	if (!bytes)
+	{
+		std::cout << "Failed to load texture: " << image << '\n';
+		std::cout << stbi_failure_reason() << '\n';
+		return;
+	}
 
 	// Generates an OpenGL texture object
 	glGenTextures(1, &ID);
@@ -65,7 +71,7 @@ void Texture::Bind()
 
 void Texture::Unbind()
 {
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, 0); 
 }
 
 void Texture::Delete()

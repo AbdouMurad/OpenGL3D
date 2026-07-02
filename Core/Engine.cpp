@@ -12,6 +12,7 @@ void Application::run(Game& game) {
 
 	gladLoadGL();
 	std::cout << glGetString(GL_VERSION) << std::endl;
+
 	glViewport(0, 0, width, height);
 
 	renderer.init();

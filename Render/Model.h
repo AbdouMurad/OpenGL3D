@@ -11,12 +11,11 @@ public:
 
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
-	std::vector<Texture> textures;
 
 	VAO VAO;
-	VBO vbo;
 	EBO ebo;
+	VBO vbo;
 
-	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture>& textures);
+	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices);
 
 };

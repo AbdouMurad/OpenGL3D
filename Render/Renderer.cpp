@@ -9,38 +9,22 @@ Shader* Renderer::getShader(ShaderType shaderType) {
 }
 
 bool Renderer::init() {
-	shaders[ShaderType::DEFAULT] = std::make_unique<Shader>("assets/shaders/default.vert", "assets/shaders/default.frag");
+	shaders[ShaderType::UNLIT] = std::make_unique<Shader>("assets/shaders/unlit.vert", "assets/shaders/unlit.frag");
 	return true;
 }
 
-void Renderer::Draw(Mesh& mesh, Shader& shader, Camera& camera) {
+void Renderer::Draw(Mesh& mesh, Material& material, Camera& camera) {
+	Shader& shader = *getShader(material.shaderType);
 	shader.Activate();
 	mesh.VAO.Bind();
-
-	unsigned int numDiffuser = 0;
-	unsigned int numSpecular = 0;
-
-	for (unsigned int i = 0; i < mesh.textures.size(); i++)
-	{
-		std::string num;
-		std::string type = mesh.textures[i].type;
-		if (type == "diffuse") {
-			num = std::to_string(numDiffuser++);
-		}
-		else if (type == "specular") {
-			num = std::to_string(numSpecular++);
-		}
-
-		mesh.textures[i].texUnit(shader, (type + num).c_str(), i);
-		mesh.textures[i].Bind();
-	}
 
 	glm::mat4 objectModel = glm::mat4(1.0f);
 	objectModel = glm::translate(objectModel, mesh.position);
 
-	shader.setVec3("camPos", camera.Position);
 	shader.setMat4("camMatrix", camera.cameraMatrix);
 	shader.setMat4("model", objectModel);
+
+	material.Bind(shader);
 
 	glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
 }
