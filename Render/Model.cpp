@@ -1,7 +1,8 @@
 #include "Model.h"
 
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices) 
-	: position({ 0.0f, 0.0f, 0.0f }) {
+{
+
 	Mesh::vertices = vertices;
 	Mesh::indices = indices;
 

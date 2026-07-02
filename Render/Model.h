@@ -1,10 +1,11 @@
 #pragma once
 
 #include "GPU/Buffer.h"
+#include "Components/GameObject.h"
 
 class Mesh {
 public:
-	glm::vec3 position; //temp -> move to model class
+	Transform transform;
 
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;

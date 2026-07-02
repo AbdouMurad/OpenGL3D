@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "Model.h" //TODO: Move model to its own component folder?
-#include "Core/Camera.h"
+#include "Components/Camera.h"
 #include "Material.h"
 #include "GPU/shaderClass.h"
 #include "ShaderTypes.h"

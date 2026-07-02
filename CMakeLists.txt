@@ -33,9 +33,10 @@ add_executable(OpenGL3D
     Core/Input.cpp
     Core/Time.cpp
     Core/Window.cpp
-    Core/Camera.cpp
-    Core/Camera.h
-)
+
+    Components/Camera.cpp
+    Components/Camera.h
+ "Components/GameObject.h" "Components/GameObject.cpp")
 
 target_include_directories(OpenGL3D PRIVATE
     ${CMAKE_SOURCE_DIR}

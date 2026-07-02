@@ -21,6 +21,7 @@ void Application::run(Game& game) {
 	Input::Init(window.getHandler());
 	game.start(width, height);
 	while (!window.shouldClose()) {
+		Time::update();
 		float dt = Time::deltaTime();
 		Input::Update();
 		window.pollEvents();	

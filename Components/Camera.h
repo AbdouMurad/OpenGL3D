@@ -2,19 +2,22 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include "gl_core.h"
+#include <iostream>
+
+#include "Core/gl_core.h"
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<glm/gtx/rotate_vector.hpp>
 #include<glm/gtx/vector_angle.hpp>
+#include <glm/geometric.hpp>
 
 #include "Render/GPU/shaderClass.h"
 #include "Core/Input.h"
+#include "GameObject.h"
 class Camera {
 public:
-	glm::vec3 Position;
-	glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
+	Transform transform;
 	glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::mat4 cameraMatrix = glm::mat4(1.0f);
 	
@@ -26,5 +29,6 @@ public:
 	void setViewport(int width, int height);
 	void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
 	
+	glm::vec3 getOrientation();
 
 };

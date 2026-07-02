@@ -28,17 +28,35 @@ public:
        
         //TODO: Shouldnt need any camera calls like this in here
         camera.setViewport(width, height); 
-        camera.updateMatrix(45.0f, 0.1f, 100.0f); 
-        camera2.setViewport(width, height);
-        camera2.updateMatrix(80.0f, 0.1f, 100.0f);
+        camera.transform.setRotation({ -15,-90,0 });
+         
     };
 
 
-    void update(float dt, Renderer& renderer) override { 
-        if (Input::GetKey(GLFW_KEY_W))
-            renderer.Draw(*floor, *floorMaterial, camera);
-        else
-            renderer.Draw(*floor, *floorMaterial, camera2);
+    void update(float dt, Renderer& renderer) override {
+
+        renderer.Draw(*floor, *floorMaterial, camera);
+        camera.updateMatrix(45.0f, 0.1f, 100.0f);
+        if (Input::GetKey(GLFW_KEY_W)) {
+            camera.transform.translate({ 0,0, -10.0f * dt });
+            std::cout << dt << std::endl;
+            std::cout << camera.transform << std::endl;
+        }
+        else if (Input::GetKey(GLFW_KEY_S)) {
+            camera.transform.translate({ 0,0, 10.0f * dt });
+            std::cout << dt << std::endl;
+            std::cout << camera.transform << std::endl;
+        }
+        else if (Input::GetKey(GLFW_KEY_D)) {
+            camera.transform.rotate({ 0,100.0f * dt, 0 });
+            std::cout << dt << std::endl;
+            std::cout << camera.transform << std::endl;
+        }
+        else if (Input::GetKey(GLFW_KEY_A)) {
+            camera.transform.rotate({ 0,-100.0f * dt, 0 });
+            std::cout << dt << std::endl;
+            std::cout << camera.transform << std::endl;
+        }
     };
 
 
@@ -47,13 +65,12 @@ public:
         delete floorMaterial;
     };
 
-    MyGame() : camera(0, 0, { 0, 1, 3 }), camera2(0, 0, {0, 1, 3}) {};
+    MyGame() : camera(0, 0, { 0, 1, 3 }) {};
 
     Mesh* floor = nullptr;
     Material* floorMaterial = nullptr;
     
     Camera camera;
-    Camera camera2;
     
 
 };
