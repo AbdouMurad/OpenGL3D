@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ShaderTypes.h"
-#include "Texture.h"
-#include "shaderClass.h"
+#include "GPU/Texture.h"
+#include "GPU/shaderClass.h"
 
 class Material {
 public:

@@ -2,6 +2,7 @@
 
 Application::Application(int w, int h, std::string n)
 	:	width(w), height(h), name(n) {}
+
 void Application::run(Game& game) {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -16,7 +17,6 @@ void Application::run(Game& game) {
 	glViewport(0, 0, width, height);
 
 	renderer.init();
-
 
 	Input::Init(window.getHandler());
 	game.start(width, height);
@@ -36,6 +36,7 @@ void Application::run(Game& game) {
 	game.shutdown();
 	shutdown();
 }
+
 void Application::shutdown() {
 	window.shutdown();
 } 

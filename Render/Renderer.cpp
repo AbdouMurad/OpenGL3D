@@ -1,8 +1,5 @@
 #include "Renderer.h"
 
-Renderer::Renderer() {}
-
-Renderer::~Renderer() {}
 
 Shader* Renderer::getShader(ShaderType shaderType) {
 	return shaders[shaderType].get();

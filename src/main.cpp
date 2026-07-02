@@ -5,8 +5,8 @@ class MyGame : public Game {
 public:
     void start(int width, int height) override {
         
-        // Vertices coordinates
-        Vertex vertices[] = { //               COORDINATES           /            COLORS          /           NORMALS         /       TEXTURE COORDINATES    //
+        Vertex vertices[] = 
+        { //               COORDINATES           /            COLORS          /           NORMALS         /       TEXTURE COORDINATES    //
             Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)},
             Vertex{glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 1.0f)},
             Vertex{glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f)},
@@ -25,28 +25,36 @@ public:
 
         floor = new Mesh(verts, ind);
         floorMaterial = new UnlitMaterial("assets/textures/planks.png");
-        camera.setViewport(width, height); //TODO: Shouldnt need any camera calls like this in here
+       
+        //TODO: Shouldnt need any camera calls like this in here
+        camera.setViewport(width, height); 
+        camera.updateMatrix(45.0f, 0.1f, 100.0f); 
+        camera2.setViewport(width, height);
+        camera2.updateMatrix(45.0f, 0.1f, 100.0f);
     };
 
 
     void update(float dt, Renderer& renderer) override {
-        camera.updateMatrix(45.0f, 0.1f, 100.0f); //TODO: This too
-
-        renderer.Draw(*floor, *floorMaterial, camera);
-
+        if (Input::GetKey(GLFW_KEY_W))
+            renderer.Draw(*floor, *floorMaterial, camera);
+        else
+            renderer.Draw(*floor, *floorMaterial, camera2);
     };
 
 
     void shutdown() override {
         delete floor;
+        delete floorMaterial;
     };
 
-    MyGame() : camera(0, 0, {0, 1, 3}) {};
+    MyGame() : camera(0, 0, { 0, 1, 3 }), camera2(0, 0, {0, 1, 4}) {};
 
     Mesh* floor = nullptr;
     Material* floorMaterial = nullptr;
     
     Camera camera;
+    Camera camera2;
+    
 
 };
 

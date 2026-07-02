@@ -1,9 +1,6 @@
 #pragma once
 
-#include <string>
-
-#include "Buffer.h"
-#include "Texture.h" 
+#include "GPU/Buffer.h"
 
 class Mesh {
 public:
