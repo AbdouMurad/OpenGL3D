@@ -1,12 +1,16 @@
 #pragma once
 
+#include <memory>
+#include <string>
+
 #include "GPU/Buffer.h"
 #include "Components/GameObject.h"
+#include "Material.h"
+#include "Core/Handlers.h"
+
 
 class Mesh {
 public:
-	Transform transform;
-
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
 
@@ -16,4 +20,28 @@ public:
 
 	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices);
 
+};
+
+struct Primitive {
+	MeshHandle mesh;
+	MaterialHandle material;
+};
+
+struct Node {
+	Transform localTransform;
+
+	Node* parent = nullptr;
+	std::vector<std::unique_ptr<Node>> children;
+	
+	
+	std::vector<Primitive> primitives;
+	
+	Node() = default;
+	Node(Node* parentNode)
+		: parent(parentNode) {}
+};
+
+class Model {
+public:
+	Node root;
 };

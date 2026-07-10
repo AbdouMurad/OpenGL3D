@@ -1,8 +1,9 @@
 {
-  "dependencies": [
-    "glfw3",
-    "glad",
-    "glm",
-    "stb"
-  ]
+    "dependencies": [
+        "glfw3",
+        "glad",
+        "glm",
+        "stb",
+        "nlohmann-json"
+    ]
 }

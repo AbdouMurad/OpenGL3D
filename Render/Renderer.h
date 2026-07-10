@@ -10,10 +10,15 @@
 
 class Renderer {
 public:
-	std::unique_ptr<Shader> shaders[ShaderType::COUNT];
 
 	bool init();
-	Shader* getShader(ShaderType shaderType);
-	void Draw(Mesh& mesh, Material& material, Camera& camera);
 
+	void setCamera(Camera* cam) { currentCam = cam; }
+
+	void Draw(Mesh& mesh, Material& material);
+	void Draw(GameObject& object);
+
+private:
+	Camera* currentCam;
+	void DrawNode(Node& node, const glm::mat4 parentTransform);
 };

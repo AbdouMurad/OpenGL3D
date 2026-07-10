@@ -1,10 +1,11 @@
 #include "Texture.h"
 
+Texture::Texture(const char* image, const char* texType) : Texture(image, texType, 0, GL_RGBA, GL_UNSIGNED_BYTE) {}
 Texture::Texture(const char* image, const char* texType, GLenum slot, GLenum format, GLenum pixelType)
 {
 	// Assigns the type of the texture ot the texture object
 	type = texType;
-	std::cout << "Loading texture: " << image << std::endl;
+	
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up

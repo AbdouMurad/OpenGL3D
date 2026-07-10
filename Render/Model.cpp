@@ -20,4 +20,3 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices)
 	vbo.Unbind();
 	ebo.Unbind();
 }
-

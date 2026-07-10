@@ -1,18 +1,21 @@
 #pragma once
 
 #include<glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp> 
 #include<cmath>
 #include <iostream>
+#include "Core/Handlers.h"
 
 class Transform {
 private:
-	glm::vec3 position;
-	glm::vec3 size;
-	glm::vec3 rotation;
+	glm::vec3 position = glm::vec3(0,0,0);
+	glm::quat rotation = glm::quat(1,0,0,0);
+	glm::vec3 size = glm::vec3(1, 1, 1);
 public:
 	Transform(glm::vec3 position, glm::vec3 size, glm::vec3 rotation);
 	Transform(glm::vec3 position);
-	Transform();
+	Transform() = default;
 
 	glm::vec3 getPosition();
 	glm::vec3 getSize();
@@ -29,3 +32,9 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Transform& transform);
 };
 
+class GameObject {
+public: 
+	Transform transform;
+	ModelHandle model;
+
+};
