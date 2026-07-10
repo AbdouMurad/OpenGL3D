@@ -25,6 +25,7 @@ void Camera::setViewport(int width, int height) {
 }
 
 glm::vec3 Camera::getOrientation() {
+	//getRotation converts to degrees, then here its converted back to radians. Might be worth optimizing?
 	glm::vec3 rotation = glm::radians(transform.getRotation());
 	return glm::normalize(glm::vec3(
 		cos(rotation.y) * cos(rotation.x),

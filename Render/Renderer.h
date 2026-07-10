@@ -6,7 +6,7 @@
 #include "Components/Camera.h"
 #include "Material.h"
 #include "GPU/shaderClass.h"
-#include "ShaderTypes.h"
+
 
 class Renderer {
 public:
