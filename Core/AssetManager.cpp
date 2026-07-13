@@ -1,9 +1,60 @@
 #include "AssetManager.h"
 
-using json = nlohmann::json;
 
+struct GLTFPrimitive
+{
+	MeshHandle mesh;
+	MaterialHandle material;
+};
 
-static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vector<std::vector<MeshHandle>>& meshMap) {
+static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::filesystem::path& gltfDirectory) {
+	const json& gltfMaterial = data.materials[index];
+
+	Material material;
+
+	
+	if (gltfMaterial.contains("pbrMetallicRoughness")) {
+		const json& pbr = gltfMaterial["pbrMetallicRoughness"];
+
+		if (pbr.contains("baseColorFactor")) {
+			auto& c = pbr["baseColorFactor"];
+
+			material.properties.baseColor = glm::vec4(c[0], c[1], c[2], c[3]);
+		}
+		if (pbr.contains("metallicFactor")) {
+			material.properties.metallic = pbr["metallicFactor"];
+		}
+		if (pbr.contains("roughnessFactor")) {
+			material.properties.roughness = pbr["roughnessFactor"];
+		}
+		if (pbr.contains("baseColorTexture")) {
+			int textureIndex = pbr["baseColorTexture"]["index"];
+
+			const json& texture = data.textures[textureIndex];
+
+			int imageIndex = texture["source"];
+
+			const json& image = data.images[imageIndex];
+
+			std::string imageURI = image["uri"];
+
+			std::filesystem::path texturePath =
+				gltfDirectory / imageURI;
+
+			std::cout << texturePath << std::endl;
+			material.textures.baseColor =
+				AssetManager::Get().LoadTexture(
+					texturePath.string(),
+					"diffuse"
+				);
+			material.flags |= MATERIAL_BASE_COLOR_TEXTURE;
+		}
+	}
+
+	return AssetManager::Get().CreateMaterial(material);
+}
+
+static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vector<std::vector<GLTFPrimitive>>& meshMap) {
 	const json& gltfNode = data.nodes[nodeIndex];
 	if (gltfNode.contains("translation"))
 	{
@@ -17,15 +68,22 @@ static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vecto
 
 		node.localTransform.setSize(glm::vec3(s[0], s[1], s[2]));
 	}
-//TODO: ADD ROATATION -> Switch to quat
+	if (gltfNode.contains("rotation")) {
+		auto& r = gltfNode["rotation"];
+
+		glm::quat rotation(r[3], r[0], r[1], r[2]);
+
+		node.localTransform.setRotation(rotation);
+	}
+
 	if (gltfNode.contains("mesh")) {
 		int meshIndex = gltfNode["mesh"];
 
-		for (MeshHandle handle : meshMap[meshIndex]) {
+		for (const GLTFPrimitive& gltfPrimitive : meshMap[meshIndex]) {
 			Primitive primitive;
-			primitive.mesh = handle;
 
-			primitive.material = 0;
+			primitive.mesh = gltfPrimitive.mesh;
+			primitive.material = gltfPrimitive.material;
 
 			node.primitives.push_back(primitive);
 		}
@@ -56,7 +114,7 @@ static Model* loadGLTF(const std::string& filePath) {
 	//parse glTF json into intermediate representation
 
 	json gltf = json::parse(jsonText);
-
+	std::cout << gltf << std::endl;
 	GLTFData data;
 	data.scenes		 = gltf["scenes"];
 	data.nodes		 = gltf["nodes"];
@@ -64,18 +122,25 @@ static Model* loadGLTF(const std::string& filePath) {
 	data.accessors   = gltf["accessors"];
 	data.bufferViews = gltf["bufferViews"];
 	data.buffers	 = gltf["buffers"];
+	data.materials   = gltf.value("materials", json::array());
+	data.textures    = gltf.value("textures", json::array());
+	data.images      = gltf.value("images", json::array());
+
+	std::filesystem::path gltfDirectory =
+		std::filesystem::path(filePath).parent_path();
 
 	//load buffers
-
 	data.loadedBuffers.resize(data.buffers.size());
 	for (size_t i = 0; i < data.buffers.size(); ++i) {
 		const json& bufferDef = data.buffers[i];
 
-		std::string uri = bufferDef["uri"];
-		std::ifstream file(uri, std::ios::binary);
+		std::filesystem::path bufferPath = gltfDirectory / bufferDef["uri"].get<std::string>();
 
-		if (!file.is_open()) return nullptr;
+		std::ifstream file(bufferPath, std::ios::binary);
+
+		if (!file.is_open()) return nullptr; 
 		
+
 		file.seekg(0, std::ios::end);
 		size_t size = file.tellg();
 		file.seekg(0, std::ios::beg);
@@ -86,15 +151,15 @@ static Model* loadGLTF(const std::string& filePath) {
 
 	//build meshes
 
-	std::vector<std::vector<MeshHandle>> meshMap;
+	
+	std::vector<std::vector<GLTFPrimitive>> meshMap;
 	meshMap.resize(data.meshes.size());
-
+	
 	for (int meshIndex = 0; meshIndex < data.meshes.size(); ++meshIndex)
 	{
 		const json& mesh = data.meshes[meshIndex];
 
 		const json& primitives = mesh["primitives"];
-
 
 		for (const auto& primitive : primitives) {
 			const json& attributes = primitive["attributes"];
@@ -111,7 +176,10 @@ static Model* loadGLTF(const std::string& filePath) {
 			int bufferIndex = bufferView["buffer"];
 			GLTFBuffer& buffer = data.loadedBuffers[bufferIndex];
 
-			uint8_t* dataPtr = buffer.data.data() + (size_t)bufferView["byteOffset"] + (size_t)accessor["byteOffset"];
+			size_t bufferViewOffset = bufferView.value("byteOffset", 0);
+			size_t accessorOffset = accessor.value("byteOffset", 0);
+			uint8_t* dataPtr = buffer.data.data() +  bufferViewOffset + accessorOffset;
+			
 
 			int count = accessor["count"];
 
@@ -127,7 +195,7 @@ static Model* loadGLTF(const std::string& filePath) {
 					floatData[i * 3 + 2]
 				);
 			}
-
+			
 			//__________________NORMAL_______________________
 			if (attributes.contains("NORMAL")) {
 				
@@ -140,8 +208,10 @@ static Model* loadGLTF(const std::string& filePath) {
 				int normalBufferIndex = normalBufferView["buffer"];
 				GLTFBuffer& normalBuffer = data.loadedBuffers[normalBufferIndex];
 
-				uint8_t* normalDataPtr = normalBuffer.data.data() + (size_t)normalBufferView["byteOffset"] + (size_t)normalAccessor["byteOffset"];
-
+				size_t normalBufferViewOffset = normalBufferView.value("byteOffset", 0);
+				size_t normalAccessorOffset = normalAccessor.value("byteOffset", 0);
+				uint8_t* normalDataPtr = normalBuffer.data.data() + normalBufferViewOffset + normalAccessorOffset;
+				
 				int normalCount = normalAccessor["count"];
 
 				float* normalFloat = reinterpret_cast<float*>(normalDataPtr);
@@ -155,7 +225,7 @@ static Model* loadGLTF(const std::string& filePath) {
 					);
 				}
 			}
-
+			
 			//_________________TEX_COORDS_____________
 			if (attributes.contains("TEXCOORD_0")) {
 				int texCoordAccessorIndex = attributes["TEXCOORD_0"];
@@ -167,7 +237,9 @@ static Model* loadGLTF(const std::string& filePath) {
 				int texCoordBufferIndex = texCoordBufferView["buffer"];
 				GLTFBuffer& texCoordBuffer = data.loadedBuffers[texCoordBufferIndex];
 
-				uint8_t* texCoordDataPtr = texCoordBuffer.data.data() + (size_t)texCoordBufferView["byteOffset"] + (size_t)texCoordAccessor["byteOffset"];
+				size_t texCoordBufferViewOffset = texCoordBufferView.value("byteOffset", 0);
+				size_t texCoordAccessorOffset = texCoordAccessor.value("byteOffset", 0);
+				uint8_t* texCoordDataPtr = texCoordBuffer.data.data() + texCoordBufferViewOffset + texCoordAccessorOffset;
 
 				int texCoordCount = texCoordAccessor["count"];
 				float* texCoordFloat = reinterpret_cast<float*>(texCoordDataPtr);
@@ -183,6 +255,7 @@ static Model* loadGLTF(const std::string& filePath) {
 
 			//__________________INDICES_______________
 
+			
 			int indexAccessor = primitive["indices"];
 			const json& indexAccessorObj = data.accessors[indexAccessor];
 
@@ -192,7 +265,9 @@ static Model* loadGLTF(const std::string& filePath) {
 			int indexBufferIndex = indexBufferView["buffer"];
 			GLTFBuffer& indexBuffer = data.loadedBuffers[indexBufferIndex];
 
-			uint8_t* indexDataPtr = indexBuffer.data.data() + (size_t)indexBufferView["byteOffset"] + (size_t)indexAccessorObj["byteOffset"];
+			size_t indexBufferViewOffset = indexBufferView.value("byteOffset", 0);
+			size_t indexAccessorObjOffset = indexAccessorObj.value("byteOffset", 0);
+			uint8_t* indexDataPtr = indexBuffer.data.data() + indexBufferViewOffset + indexAccessorObjOffset;
 
 			int indexCount = indexAccessorObj["count"];
 			int componentType = indexAccessorObj["componentType"];
@@ -216,10 +291,20 @@ static Model* loadGLTF(const std::string& filePath) {
 			}
 
 			MeshHandle meshHandle = AssetManager::Get().CreateMesh(vertices, indices);
-			meshMap[meshIndex].push_back(meshHandle);
-		}
 
-		
+			MaterialHandle materialHandle = 0;
+			if (primitive.contains("material")) {
+				int materialIndex = primitive["material"];
+				materialHandle = LoadGLTFMaterial(materialIndex, data, gltfDirectory);
+			}
+
+			GLTFPrimitive gltfPrimitive;
+
+			gltfPrimitive.mesh = meshHandle;
+			gltfPrimitive.material = materialHandle;
+
+			meshMap[meshIndex].push_back(gltfPrimitive);
+		}
 	}
 	
 	//build node hierarchy
@@ -227,10 +312,11 @@ static Model* loadGLTF(const std::string& filePath) {
 	
 	int sceneIndex = gltf.value("scene", 0);
 	const json& scene = data.scenes[sceneIndex];
-
+	std::cout << "Nodes: " << data.nodes.size() << "\n";
+	std::cout << "Meshes: " << data.meshes.size() << "\n";
+	std::cout << "Materials: " << data.materials.size() << "\n";
 	for (int rootNodeIndex : scene["nodes"]) {
 		auto child = std::make_unique<Node>(&model->root);
-
 		LoadNode(*child, rootNodeIndex, data, meshMap);
 
 		model->root.children.push_back(std::move(child));
@@ -258,11 +344,27 @@ TextureHandle AssetManager::LoadTexture(const std::string& path, const std::stri
 	return nextID++;
 }
 ShaderHandle AssetManager::LoadShader(const std::string& vertexFile, const std::string& fragmentFile) {
+	
+	std::string key = vertexFile + "|" + fragmentFile;
+	
+	//if it already exists then return the handle
+	auto it = shaderCache.find(key);
+	if (it != shaderCache.end())
+		return it->second;
+
+	shaderCache[key] = nextID;
+
+
 	shaders[nextID] = std::make_unique<Shader>(vertexFile.c_str(), fragmentFile.c_str());
+	return nextID++;
 }
 
 MeshHandle AssetManager::CreateMesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices) {
-	meshes[nextID] = std::make_unique<Mesh>(vertices, indices);
+	meshes[nextID] = std::make_unique<Mesh>(vertices, indices); //use std::move for optimization
+	return nextID++;
+}
+MaterialHandle AssetManager::CreateMaterial(Material material) {
+	materials[nextID] = std::make_unique<Material>(std::move(material));
 	return nextID++;
 }
 
@@ -288,4 +390,5 @@ void AssetManager::Clear() {
 	textures.clear();
 	materials.clear();
 	shaders.clear();
+	shaderCache.clear();
 }

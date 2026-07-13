@@ -2,25 +2,25 @@
 
 #include "GPU/Texture.h"
 #include "GPU/shaderClass.h"
-#include "Core/AssetManager.h"
+#include "Core/Handlers.h"
 
-class Material {
-public:
-	ShaderHandle shader = 0; 
-
-	Material(ShaderHandle shader);
-	virtual ~Material() = default;
-	
-	virtual void Bind(Shader& shader) = 0;
+struct MaterialTextures {
+	TextureHandle baseColor = 0;
+	TextureHandle normal = 0;
+	TextureHandle metallicRoughness = 0;
+	TextureHandle emissive = 0;
+};
+struct MaterialProperties {
+	glm::vec4 baseColor = glm::vec4(1.0f);
+	float metallic = 1.0f;
+	float roughness = 1.0f;
 };
 
-class UnlitMaterial : public Material {
-public:
-	UnlitMaterial(const char* texturePath, ShaderHandle shader);
-	~UnlitMaterial() = default;
+struct Material {
+	uint32_t flags = MATERIAL_NONE;
 
-	TextureHandle texture = 0;
-
-	void Bind(Shader& shader) override;
+	MaterialTextures textures;
+	MaterialProperties properties;
 
 };
+

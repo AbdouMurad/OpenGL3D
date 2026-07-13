@@ -7,18 +7,19 @@
 #include "Material.h"
 #include "GPU/shaderClass.h"
 
+#include "Core/ShaderManager.h"
 
 class Renderer {
 public:
 
 	bool init();
 
-	void setCamera(Camera* cam) { currentCam = cam; }
 
-	void Draw(Mesh& mesh, Material& material);
-	void Draw(GameObject& object);
+	//void Draw(Mesh& mesh, Material& material);
+	void Draw(Model& model, Transform& transform, Camera& camera);
+
 
 private:
-	Camera* currentCam;
-	void DrawNode(Node& node, const glm::mat4 parentTransform);
+
+	void DrawNode(Node* node, const glm::mat4& parentTransform, Camera& camera);
 };

@@ -4,75 +4,59 @@
 class MyGame : public Game {
 public:
     void start(int width, int height) override {
-        
-        Vertex vertices[] = 
-        { //               COORDINATES           /            NORMALS          /           COLORS         /       TEXTURE COORDINATES    //
-            Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
-            Vertex{glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
-            Vertex{glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-            Vertex{glm::vec3(1.0f, 0.0f,  1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)}
-        };
 
-        // Indices for vertices order
-        GLuint indices[] =
-        {
-            0, 1, 2,
-            0, 2, 3
-        };
-        
-        std::vector <Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
-        std::vector <GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
+        object.model = AssetManager::Get().LoadModel("assets/models/super.gltf");
+        std::cout << AssetManager::Get().nextID << std::endl;
+        object.transform.setPosition({ 0,0,0 });
+        object.transform.setRotation({ 45,45,45 });
 
-        floor = new Mesh(verts, ind);
-        floorMaterial = new UnlitMaterial("assets/textures/planks.png");
-       
         //TODO: Shouldnt need any camera calls like this in here
         camera.setViewport(width, height); 
-        camera.transform.setRotation({ -15,-90,0 });
-         
+        camera.transform.setRotation({ 0,0,0 });
     };
-
 
     void update(float dt, Renderer& renderer) override {
-
-        renderer.Draw(*floor, *floorMaterial, camera);
+        
+        renderer.Draw(AssetManager::Get().GetModel(object.model), object.transform, camera);
         camera.updateMatrix(45.0f, 0.1f, 100.0f);
         if (Input::GetKey(GLFW_KEY_W)) {
-            camera.transform.translate({ 0,0, -10.0f * dt });
-            std::cout << dt << std::endl;
-            std::cout << camera.transform << std::endl;
-        }
-        else if (Input::GetKey(GLFW_KEY_S)) {
             camera.transform.translate({ 0,0, 10.0f * dt });
-            std::cout << dt << std::endl;
-            std::cout << camera.transform << std::endl;
         }
-        else if (Input::GetKey(GLFW_KEY_D)) {
-            camera.transform.rotate({ 0,100.0f * dt, 0 });
-            std::cout << dt << std::endl;
-            std::cout << camera.transform << std::endl;
+        if (Input::GetKey(GLFW_KEY_S)) {
+            camera.transform.translate({ 0,0, -10.0f * dt });
         }
-        else if (Input::GetKey(GLFW_KEY_A)) {
-            camera.transform.rotate({ 0,-100.0f * dt, 0 });
-            std::cout << dt << std::endl;
-            std::cout << camera.transform << std::endl;
+        if (Input::GetKey(GLFW_KEY_D)) {
+            camera.transform.translate({ -10.0f * dt,0,0  });
         }
+        if (Input::GetKey(GLFW_KEY_A)) {
+            camera.transform.translate({ 10.0f * dt,0, 0 });
+        }
+        if (Input::GetKey(GLFW_KEY_SPACE)) {
+            camera.transform.translate({ 0,10.0f * dt, 0 });
+        }
+        if (Input::GetKey(GLFW_KEY_V)) {
+            camera.transform.translate({ 0,-10.0f * dt, 0 });
+        }
+
+        if (Input::GetKey(GLFW_KEY_R)) {
+            camera.transform.rotate({ 0,200.0f * dt, 0 });
+        }
+        if (Input::GetKey(GLFW_KEY_T)) {
+            camera.transform.rotate({ 0,-200.0f * dt, 0 });
+        }
+        //std::cout << "OBJ: " << object.transform << std::endl;
+        /*std::cout << camera.transform << std::endl;*/
     };
 
 
-    void shutdown() override {
-        delete floor;
-        delete floorMaterial;
-    };
+    void shutdown() override {};
 
-    MyGame() : camera(0, 0, { 0, 1, 3 }) {};
+    MyGame() : camera(0, 0, { 0, 0, 0 }) {};
 
-    Mesh* floor = nullptr;
-    Material* floorMaterial = nullptr;
     
     Camera camera;
-    
 
+    GameObject object;
 };
 
 

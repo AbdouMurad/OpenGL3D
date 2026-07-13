@@ -12,6 +12,7 @@ void Application::run(Game& game) {
 	window.init(width, height, name, false);
 
 	gladLoadGL();
+	glEnable(GL_DEPTH_TEST);
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
 	glViewport(0, 0, width, height);
@@ -27,7 +28,7 @@ void Application::run(Game& game) {
 		window.pollEvents();	
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		game.update(dt, renderer);
 

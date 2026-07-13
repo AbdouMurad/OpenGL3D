@@ -15,6 +15,9 @@ glm::vec3 Transform::getSize() {
 glm::vec3 Transform::getRotation() {
 	return glm::degrees(glm::eulerAngles(rotation));
 }
+glm::quat Transform::getQuat() {
+	return rotation;
+}
 
 void Transform::setPosition(glm::vec3 position) {
 	Transform::position = position;
@@ -22,15 +25,25 @@ void Transform::setPosition(glm::vec3 position) {
 void Transform::setSize(glm::vec3 size) {
 	Transform::size = size;
 }
+
 void Transform::setRotation(glm::vec3 rotation) {
 	Transform::rotation = glm::quat(glm::radians(rotation));
+}
+void Transform::setRotation(glm::quat rotation) {
+	Transform::rotation = rotation;
 }
 
 void Transform::translate(glm::vec3 delta) {
 	position += delta;
 }
-void Transform::rotate(glm::vec3 rotation) {
-	Transform::rotation = glm::normalize(glm::quat(glm::radians(rotation)) * Transform::rotation);
+void Transform::rotate(glm::vec3 delta)
+{
+	glm::quat deltaQuat =
+		glm::angleAxis(glm::radians(delta.x), glm::vec3(1, 0, 0)) *
+		glm::angleAxis(glm::radians(delta.y), glm::vec3(0, 1, 0)) *
+		glm::angleAxis(glm::radians(delta.z), glm::vec3(0, 0, 1));
+
+	rotation = glm::normalize(rotation * deltaQuat);
 }
 void Transform::scale(float scale) {
 	size *= scale;

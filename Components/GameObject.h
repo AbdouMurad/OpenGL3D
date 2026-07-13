@@ -1,9 +1,11 @@
 #pragma once
 
-#include<glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp> 
-#include<cmath>
+#include <cmath>
 #include <iostream>
 #include "Core/Handlers.h"
 
@@ -20,10 +22,12 @@ public:
 	glm::vec3 getPosition();
 	glm::vec3 getSize();
 	glm::vec3 getRotation();
+	glm::quat getQuat();
 
 	void setPosition(glm::vec3 pos);
 	void setSize(glm::vec3 size);
 	void setRotation(glm::vec3 rotation);
+	void setRotation(glm::quat rotation);
 
 	void translate(glm::vec3 delta);
 	void rotate(glm::vec3 rotation);

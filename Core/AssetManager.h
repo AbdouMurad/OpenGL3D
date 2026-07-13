@@ -11,7 +11,7 @@
 #include "Render/Material.h"
 #include "Handlers.h"
 
-
+using json = nlohmann::json;
 
 struct GLTFBuffer
 {
@@ -25,10 +25,15 @@ struct GLTFData
 	json meshes;
 	json accessors;
 	json bufferViews;
-	json buffers;
+	json buffers; 
+    json materials;
+    json textures;
+    json images;
 
 	std::vector<GLTFBuffer> loadedBuffers;
 };
+
+
 
 class AssetManager {
 public:
@@ -40,10 +45,10 @@ public:
     ModelHandle LoadModel(const std::string& path);
     TextureHandle LoadTexture(const std::string& path, const std::string& texType);
     ShaderHandle LoadShader(const std::string& vertexFile, const std::string& fragmentFile);
-    MaterialHandle LoadMaterial(const std::string& path);
 
     // Meshes are SPECIAL (usually generated, not loaded)
     MeshHandle CreateMesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices); //TODO: use && for moving large data -> look more into this
+    MaterialHandle CreateMaterial(Material material);
 
     // ======================
     // GET (fast lookup)
@@ -59,17 +64,19 @@ public:
     // ======================
     void Clear();
 
+    uint32_t nextID = 1;
 private:
     AssetManager() = default;
 
     template<typename T>
     using AssetMap = std::unordered_map<uint32_t, std::unique_ptr<T>>;
 
-    uint32_t nextID = 1;
 
     AssetMap<Model> models;
     AssetMap<Mesh> meshes;
     AssetMap<Texture> textures;
     AssetMap<Material> materials;
     AssetMap<Shader> shaders;
+
+    std::unordered_map<std::string, ShaderHandle> shaderCache;
 };
