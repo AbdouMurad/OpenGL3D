@@ -25,10 +25,7 @@ void Camera::setViewport(int width, int height) {
 }
 
 glm::vec3 Camera::getOrientation() {
-	glm::vec3 rotation = glm::radians(transform.getRotation());
-	return glm::normalize(glm::vec3(
-		cos(rotation.y) * cos(rotation.x),
-		sin(rotation.x),
-		sin(rotation.y) * cos(rotation.x)
-	));
+	return glm::normalize(
+		transform.getQuat() * glm::vec3(0, 0, -1)
+	);
 }

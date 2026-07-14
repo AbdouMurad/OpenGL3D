@@ -6,14 +6,20 @@
 #include "Components/Camera.h"
 #include "Material.h"
 #include "GPU/shaderClass.h"
-#include "ShaderTypes.h"
+
+#include "Core/ShaderManager.h"
 
 class Renderer {
 public:
-	std::unique_ptr<Shader> shaders[ShaderType::COUNT];
 
 	bool init();
-	Shader* getShader(ShaderType shaderType);
-	void Draw(Mesh& mesh, Material& material, Camera& camera);
 
+
+	//void Draw(Mesh& mesh, Material& material);
+	void Draw(Model& model, Transform& transform, Camera& camera);
+
+
+private:
+
+	void DrawNode(Node* node, const glm::mat4& parentTransform, Camera& camera);
 };

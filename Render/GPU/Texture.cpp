@@ -1,16 +1,17 @@
 #include "Texture.h"
 
+Texture::Texture(const char* image, const char* texType) : Texture(image, texType, 0, GL_RGBA, GL_UNSIGNED_BYTE) {}
 Texture::Texture(const char* image, const char* texType, GLenum slot, GLenum format, GLenum pixelType)
 {
 	// Assigns the type of the texture ot the texture object
 	type = texType;
-	std::cout << "Loading texture: " << image << std::endl;
+	
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
 	stbi_set_flip_vertically_on_load(true);
 	// Reads the image from a file and stores it in bytes
-	unsigned char* bytes = stbi_load(image, &widthImg, &heightImg, &numColCh, 0);
+	unsigned char* bytes = stbi_load(image, &widthImg, &heightImg, &numColCh, 4);
 	if (!bytes)
 	{
 		std::cout << "Failed to load texture: " << image << '\n';
@@ -65,6 +66,7 @@ void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
 
 void Texture::Bind()
 {
+	if (ID == 0) return;
 	glActiveTexture(GL_TEXTURE0 + unit);
 	glBindTexture(GL_TEXTURE_2D, ID);
 }

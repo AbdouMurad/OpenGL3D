@@ -1,26 +1,25 @@
 #pragma once
 
-#include "ShaderTypes.h"
 #include "GPU/Texture.h"
 #include "GPU/shaderClass.h"
+#include "Core/Handlers.h"
 
-class Material {
-public:
-	ShaderType shaderType;
+struct MaterialTextures {
+	TextureHandle baseColor = 0;
+	TextureHandle normal = 0;
+	TextureHandle metallicRoughness = 0;
+	TextureHandle emissive = 0;
+};
+struct MaterialProperties {
+	glm::vec4 baseColor = glm::vec4(1.0f);
+	float metallic = 1.0f;
+	float roughness = 1.0f;
+};
+struct Material {
+	uint32_t flags = MATERIAL_NONE;
 
-	Material(ShaderType type);
-	virtual ~Material() = default;
-	
-	virtual void Bind(Shader& shader) = 0;
+	MaterialTextures textures;
+	MaterialProperties properties;
+
 };
 
-class UnlitMaterial : public Material {
-public:
-	UnlitMaterial(const char* texturePath);
-	~UnlitMaterial() = default;
-
-	Texture texture;
-
-	void Bind(Shader& shader) override;
-
-};
