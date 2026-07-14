@@ -7,12 +7,20 @@ struct GLTFPrimitive
 	MaterialHandle material;
 };
 
+struct AccessorView {
+	uint8_t* data;
+	int count;
+	int componentType;
+	int typeCount;
+	int stride;
+};
+
 static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::filesystem::path& gltfDirectory) {
+	//Depending on what data is available about the mesh -> build material
 	const json& gltfMaterial = data.materials[index];
 
 	Material material;
 
-	
 	if (gltfMaterial.contains("pbrMetallicRoughness")) {
 		const json& pbr = gltfMaterial["pbrMetallicRoughness"];
 
@@ -55,6 +63,7 @@ static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::fil
 }
 
 static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vector<std::vector<GLTFPrimitive>>& meshMap) {
+	//Recursively build nodes -> set transform of node then recurse function with data of child nodes
 	const json& gltfNode = data.nodes[nodeIndex];
 	if (gltfNode.contains("translation"))
 	{
@@ -97,6 +106,54 @@ static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vecto
 			node.children.push_back(std::move(child));
 		}
 	}
+}
+
+AccessorView GetAccessor(GLTFData& data, int accessorIndex) {
+	const json& accessor = data.accessors[accessorIndex];
+
+	int bufferViewIndex = accessor["bufferView"];
+	const json& bufferView = data.bufferViews[bufferViewIndex];
+
+	int bufferIndex = bufferView["buffer"];
+	GLTFBuffer& buffer = data.loadedBuffers[bufferIndex];
+
+	size_t bufferViewOffset = bufferView.value("byteOffset", 0);
+	size_t accessorOffset = accessor.value("byteOffset", 0);
+	uint8_t* dataPtr = buffer.data.data() + bufferViewOffset + accessorOffset;
+
+	int count = accessor["count"];
+	int componentType = accessor["componentType"];
+
+	int typeCount = 0;
+	std::string type = accessor["type"];
+	if (type == "SCALAR") typeCount = 1;
+	else if (type == "VEC2")   typeCount = 2;
+	else if (type == "VEC3")   typeCount = 3;
+	else if (type == "VEC4")   typeCount = 4;
+	else if (type == "MAT2")   typeCount = 4;
+	else if (type == "MAT3")   typeCount = 9;
+	else if (type == "MAT4")   typeCount = 16;
+
+	int componentSize = 0;
+
+	switch (componentType) {
+		case 5120: componentSize = 1; break; // BYTE
+		case 5121: componentSize = 1; break; // UNSIGNED_BYTE
+		case 5122: componentSize = 2; break; // SHORT
+		case 5123: componentSize = 2; break; // UNSIGNED_SHORT
+		case 5125: componentSize = 4; break; // UNSIGNED_INT
+		case 5126: componentSize = 4; break; // FLOAT
+	}
+
+	int stride = bufferView.value("byteStride", componentSize * typeCount);
+	return {
+		dataPtr,
+		count,
+		componentType,
+		typeCount,
+		stride
+
+	};
 }
 
 //Supports unified indexing only for now
@@ -168,31 +225,19 @@ static Model* loadGLTF(const std::string& filePath) {
 			//_______________________POSITION______________________
 
 			int positionAccessorIndex = attributes["POSITION"];
-			const json& accessor = data.accessors[positionAccessorIndex];
 
-			int bufferViewIndex = accessor["bufferView"];
-			const json& bufferView = data.bufferViews[bufferViewIndex];
+			AccessorView pos = GetAccessor(data, positionAccessorIndex);
 
-			int bufferIndex = bufferView["buffer"];
-			GLTFBuffer& buffer = data.loadedBuffers[bufferIndex];
-
-			size_t bufferViewOffset = bufferView.value("byteOffset", 0);
-			size_t accessorOffset = accessor.value("byteOffset", 0);
-			uint8_t* dataPtr = buffer.data.data() +  bufferViewOffset + accessorOffset;
-			
-
-			int count = accessor["count"];
-
-			float* floatData = reinterpret_cast<float*>(dataPtr);
+			float* p = reinterpret_cast<float*>(pos.data);
 
 			std::vector<Vertex> vertices;
-			vertices.resize(count);
+			vertices.resize(pos.count);
 
-			for (int i = 0; i < count; ++i) {
+			for (int i = 0; i < pos.count; ++i) {
 				vertices[i].position = glm::vec3(
-					floatData[i * 3 + 0],
-					floatData[i * 3 + 1],
-					floatData[i * 3 + 2]
+					p[i * 3 + 0],
+					p[i * 3 + 1],
+					p[i * 3 + 2]
 				);
 			}
 			
@@ -200,24 +245,12 @@ static Model* loadGLTF(const std::string& filePath) {
 			if (attributes.contains("NORMAL")) {
 				
 				int normalAccessorIndex = attributes["NORMAL"];
-				const json& normalAccessor = data.accessors[normalAccessorIndex];
 
-				int normalBufferViewIndex = normalAccessor["bufferView"];
-				const json& normalBufferView = data.bufferViews[normalBufferViewIndex];
-
-				int normalBufferIndex = normalBufferView["buffer"];
-				GLTFBuffer& normalBuffer = data.loadedBuffers[normalBufferIndex];
-
-				size_t normalBufferViewOffset = normalBufferView.value("byteOffset", 0);
-				size_t normalAccessorOffset = normalAccessor.value("byteOffset", 0);
-				uint8_t* normalDataPtr = normalBuffer.data.data() + normalBufferViewOffset + normalAccessorOffset;
+				AccessorView norm = GetAccessor(data, normalAccessorIndex);
 				
-				int normalCount = normalAccessor["count"];
+				float* normalFloat = reinterpret_cast<float*>(norm.data);
 
-				float* normalFloat = reinterpret_cast<float*>(normalDataPtr);
-
-
-				for (int i = 0; i < normalCount; ++i) {
+				for (int i = 0; i < norm.count; ++i) {
 					vertices[i].normal = glm::vec3(
 						normalFloat[i * 3 + 0],
 						normalFloat[i * 3 + 1],
@@ -229,25 +262,16 @@ static Model* loadGLTF(const std::string& filePath) {
 			//_________________TEX_COORDS_____________
 			if (attributes.contains("TEXCOORD_0")) {
 				int texCoordAccessorIndex = attributes["TEXCOORD_0"];
-				const json& texCoordAccessor = data.accessors[texCoordAccessorIndex];
 
-				int texCoordBufferViewIndex = texCoordAccessor["bufferView"];
-				const json& texCoordBufferView = data.bufferViews[texCoordBufferViewIndex];
+				AccessorView texC = GetAccessor(data, texCoordAccessorIndex);
 
-				int texCoordBufferIndex = texCoordBufferView["buffer"];
-				GLTFBuffer& texCoordBuffer = data.loadedBuffers[texCoordBufferIndex];
+				float* texData = reinterpret_cast<float*>(texC.data);
 
-				size_t texCoordBufferViewOffset = texCoordBufferView.value("byteOffset", 0);
-				size_t texCoordAccessorOffset = texCoordAccessor.value("byteOffset", 0);
-				uint8_t* texCoordDataPtr = texCoordBuffer.data.data() + texCoordBufferViewOffset + texCoordAccessorOffset;
 
-				int texCoordCount = texCoordAccessor["count"];
-				float* texCoordFloat = reinterpret_cast<float*>(texCoordDataPtr);
-
-				for (int i = 0; i < texCoordCount; ++i) {
+				for (int i = 0; i < texC.count; ++i) {
 					vertices[i].texUV = glm::vec2(
-						texCoordFloat[i * 2 + 0],
-						texCoordFloat[i * 2 + 1]
+						texData[i * 2 + 0],
+						texData[i * 2 + 1]
 					);
 				}
 			}
@@ -256,36 +280,28 @@ static Model* loadGLTF(const std::string& filePath) {
 			//__________________INDICES_______________
 
 			
-			int indexAccessor = primitive["indices"];
-			const json& indexAccessorObj = data.accessors[indexAccessor];
+			AccessorView accessor = GetAccessor(data, primitive["indices"]);
 
-			int indexBufferViewIndex = indexAccessorObj["bufferView"];
-			const json& indexBufferView = data.bufferViews[indexBufferViewIndex];
+			std::vector<GLuint> indices(accessor.count);
 
-			int indexBufferIndex = indexBufferView["buffer"];
-			GLTFBuffer& indexBuffer = data.loadedBuffers[indexBufferIndex];
+			if (accessor.componentType == 5121) {
+				uint8_t* idx = reinterpret_cast<uint8_t*>(accessor.data);
 
-			size_t indexBufferViewOffset = indexBufferView.value("byteOffset", 0);
-			size_t indexAccessorObjOffset = indexAccessorObj.value("byteOffset", 0);
-			uint8_t* indexDataPtr = indexBuffer.data.data() + indexBufferViewOffset + indexAccessorObjOffset;
-
-			int indexCount = indexAccessorObj["count"];
-			int componentType = indexAccessorObj["componentType"];
-
-			std::vector<GLuint> indices;
-			indices.resize(indexCount);
-
-			if (componentType == 5123) {
-				uint16_t* idx = reinterpret_cast<uint16_t*>(indexDataPtr);
-
-				for (int i = 0; i < indexCount; ++i) {
+				for (int i = 0; i < accessor.count; ++i) {
 					indices[i] = idx[i];
 				}
 			}
-			else if (componentType == 5125) {
-				uint32_t* idx = reinterpret_cast<uint32_t*>(indexDataPtr);
+			else if (accessor.componentType == 5123) {
+				uint16_t* idx = reinterpret_cast<uint16_t*>(accessor.data);
+
+				for (int i = 0; i < accessor.count; ++i) {
+					indices[i] = idx[i];
+				}
+			}
+			else if (accessor.componentType == 5125) {
+				uint32_t* idx = reinterpret_cast<uint32_t*>(accessor.data);
 					
-				for (int i = 0; i < indexCount; ++i) {
+				for (int i = 0; i < accessor.count; ++i) {
 					indices[i] = idx[i];
 				}
 			}

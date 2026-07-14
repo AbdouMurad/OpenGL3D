@@ -15,7 +15,6 @@ struct MaterialProperties {
 	float metallic = 1.0f;
 	float roughness = 1.0f;
 };
-
 struct Material {
 	uint32_t flags = MATERIAL_NONE;
 
