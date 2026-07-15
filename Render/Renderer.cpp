@@ -44,9 +44,11 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransform, Camera& ca
 
 	glm::mat4 worldTransform = parentTransform * localTransform;
 	for (auto& p : node->primitives) {
+
+
 		Material& material = AssetManager::Get().GetMaterial(p.material);
-		
 		Mesh& mesh = AssetManager::Get().GetMesh(p.mesh);
+
 		Shader& shader = AssetManager::Get().GetShader(ShaderManager::Get().GetMaterialShader(material.flags));
 
 		shader.Activate();

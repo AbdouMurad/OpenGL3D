@@ -66,7 +66,7 @@ public:
 
     uint32_t nextID = 1;
 private:
-    AssetManager() = default;
+    AssetManager();
 
     template<typename T>
     using AssetMap = std::unordered_map<uint32_t, std::unique_ptr<T>>;

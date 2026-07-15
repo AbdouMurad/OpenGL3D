@@ -318,7 +318,7 @@ static Model* loadGLTF(const std::string& filePath) {
 
 			gltfPrimitive.mesh = meshHandle;
 			gltfPrimitive.material = materialHandle;
-
+			std::cout << "NEW MESH" << std::endl;
 			meshMap[meshIndex].push_back(gltfPrimitive);
 		}
 	}
@@ -397,7 +397,14 @@ Shader& AssetManager::GetShader(ShaderHandle id) {
 	return *shaders.at(id);
 }
 Material& AssetManager::GetMaterial(MaterialHandle id) {
+	if (id == 0) {
+		
+	}
 	return *materials.at(id);
+}
+
+AssetManager::AssetManager() {
+	materials[0] = std::make_unique<Material>();
 }
 
 void AssetManager::Clear() {

@@ -5,7 +5,7 @@ class MyGame : public Game {
 public:
     void start(int width, int height) override {
 
-        object.model = AssetManager::Get().LoadModel("assets/models/super.gltf");
+        object.model = AssetManager::Get().LoadModel("assets/models/Crow_rig.gltf");
         std::cout << AssetManager::Get().nextID << std::endl;
         object.transform.setPosition({ 0,0,0 });
         object.transform.setRotation({ 0,0,0 });
@@ -16,7 +16,6 @@ public:
     };
 
     void update(float dt, Renderer& renderer) override {
-        
         renderer.Draw(AssetManager::Get().GetModel(object.model), object.transform, camera);
         camera.updateMatrix(45.0f, 0.1f, 100.0f);
         if (Input::GetKey(GLFW_KEY_W)) {
@@ -39,13 +38,14 @@ public:
         }
 
         if (Input::GetKey(GLFW_KEY_R)) {
-            camera.transform.rotate({ 0,100.0f * dt, 0 });
+            camera.transform.rotate({ 0, 100.0f * dt, 0 });
         }
         if (Input::GetKey(GLFW_KEY_T)) {
             camera.transform.rotate({ 0,-100.0f * dt, 0 });
         }
         //std::cout << "OBJ: " << object.transform << std::endl;
         /*std::cout << camera.transform << std::endl;*/
+        
     };
 
 
