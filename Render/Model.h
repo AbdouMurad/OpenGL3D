@@ -4,7 +4,7 @@
 #include <string>
 
 #include "GPU/Buffer.h"
-#include "Components/GameObject.h"
+#include "Components/Camera.h"
 #include "Material.h"
 #include "Core/Handlers.h"
 
@@ -28,7 +28,7 @@ struct Primitive {
 };
 
 struct Node {
-	Transform localTransform;
+	TransformComponent localTransformComponent;
 
 	Node* parent = nullptr;
 	std::vector<std::unique_ptr<Node>> children;
