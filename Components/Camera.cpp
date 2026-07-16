@@ -1,17 +1,15 @@
 #include "Camera.h"
 
-Camera::Camera(int width, int height, glm::vec3 position) {
-	Camera::width = width;
-	Camera::height = height;
-	transform.setPosition(position);
+CameraComponent::CameraComponent(int width, int height) {
+	CameraComponent::width = width;
+	CameraComponent::height = height;
 }
 
-void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) { 
+void CameraComponent::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
 
-	glm::vec3 position = transform.getPosition();
-	
+	glm::vec3 position = owner->GetComponent<TransformComponent>()->getPosition();
 
 	view = glm::lookAt(position, position + getOrientation(), Up);
 	
@@ -19,13 +17,13 @@ void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {
 	cameraMatrix = projection * view;
 }
 
-void Camera::setViewport(int width, int height) {
-	Camera::width = width;
-	Camera::height = height;
+void CameraComponent::setViewport(int width, int height) {
+	CameraComponent::width = width;
+	CameraComponent::height = height;
 }
 
-glm::vec3 Camera::getOrientation() {
+glm::vec3 CameraComponent::getOrientation() {
 	return glm::normalize(
-		transform.getQuat() * glm::vec3(0, 0, -1)
+		owner->GetComponent<TransformComponent>()->getQuat() * glm::vec3(0, 0, -1)
 	);
 }

@@ -12,10 +12,9 @@ class Game {
 private:
 	
 public:
-	virtual void start(int width, int height) {};
+	virtual void start(float width, float height) {};
 	virtual void update(float dt, Renderer& renderer) {};
 	virtual void shutdown() {};
-	//virtual void render(Renderer& renderer) {};
 };
 
 class Application {

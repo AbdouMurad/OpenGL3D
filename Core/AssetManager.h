@@ -33,8 +33,6 @@ struct GLTFData
 	std::vector<GLTFBuffer> loadedBuffers;
 };
 
-
-
 class AssetManager {
 public:
     static AssetManager& Get();

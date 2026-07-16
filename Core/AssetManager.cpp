@@ -69,20 +69,20 @@ static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vecto
 	{
 		auto& t = gltfNode["translation"];
 
-		node.localTransform.setPosition(glm::vec3(t[0], t[1], t[2]));
+		node.localTransformComponent.setPosition(glm::vec3(t[0], t[1], t[2]));
 	}
 	if (gltfNode.contains("scale"))
 	{
 		auto& s = gltfNode["scale"];
 
-		node.localTransform.setSize(glm::vec3(s[0], s[1], s[2]));
+		node.localTransformComponent.setSize(glm::vec3(s[0], s[1], s[2]));
 	}
 	if (gltfNode.contains("rotation")) {
 		auto& r = gltfNode["rotation"];
 
 		glm::quat rotation(r[3], r[0], r[1], r[2]);
 
-		node.localTransform.setRotation(rotation);
+		node.localTransformComponent.setRotation(rotation);
 	}
 
 	if (gltfNode.contains("mesh")) {

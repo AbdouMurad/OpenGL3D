@@ -1,62 +1,61 @@
 #include "Core/Engine.h"
-#include "Render/Material.h"
 
 class MyGame : public Game {
 public:
-    void start(int width, int height) override {
+    void start(float width, float height) override {
 
-        object.model = AssetManager::Get().LoadModel("assets/models/Crow_rig.gltf");
-        std::cout << AssetManager::Get().nextID << std::endl;
-        object.transform.setPosition({ 0,0,0 });
-        object.transform.setRotation({ 0,0,0 });
+        object.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/super.gltf"));
+        object.AddComponent<TransformComponent>();
 
-        //TODO: Shouldnt need any camera calls like this in here
-        camera.setViewport(width, height); 
-        camera.transform.setRotation({ 0,0,0 });
+        camera.AddComponent<TransformComponent>();
+        camera.AddComponent<CameraComponent>(width, height);
+        camera.GetComponent<CameraComponent>()->setViewport(width, height);
+
+        TransformComponent* transform = object.GetComponent<TransformComponent>();
+        transform->setPosition({ 0,0,0 });
+        transform->setRotation({ 0,0,0 });
+
     };
 
     void update(float dt, Renderer& renderer) override {
-        renderer.Draw(AssetManager::Get().GetModel(object.model), object.transform, camera);
-        camera.updateMatrix(45.0f, 0.1f, 100.0f);
+        renderer.BeginFrame(*camera.GetComponent<CameraComponent>());
+        object.GetComponent<MeshRenderer>()->Render(renderer);
+        camera.GetComponent<CameraComponent>()->updateMatrix(45.0f, 0.1f, 100.0f);
+
         if (Input::GetKey(GLFW_KEY_W)) {
-            camera.transform.translate({ 0,0, 8.0f * dt });
+            camera.GetComponent<TransformComponent>()->translate({0,0, 8.0f * dt});
         }
         if (Input::GetKey(GLFW_KEY_S)) {
-            camera.transform.translate({ 0,0, -8.0f * dt });
+            camera.GetComponent<TransformComponent>()->translate({ 0,0, -8.0f * dt });
         }
         if (Input::GetKey(GLFW_KEY_D)) {
-            camera.transform.translate({ -8.0f * dt,0,0  });
+            camera.GetComponent<TransformComponent>()->translate({ -8.0f * dt,0,0  });
         }
         if (Input::GetKey(GLFW_KEY_A)) {
-            camera.transform.translate({ 8.0f * dt,0, 0 });
+            camera.GetComponent<TransformComponent>()->translate({ 8.0f * dt,0, 0 });
         }
         if (Input::GetKey(GLFW_KEY_SPACE)) {
-            camera.transform.translate({ 0,8.0f * dt, 0 });
+            camera.GetComponent<TransformComponent>()->translate({ 0,8.0f * dt, 0 });
         }
         if (Input::GetKey(GLFW_KEY_V)) {
-            camera.transform.translate({ 0,-8.0f * dt, 0 });
+            camera.GetComponent<TransformComponent>()->translate({ 0,-8.0f * dt, 0 });
         }
 
         if (Input::GetKey(GLFW_KEY_R)) {
-            camera.transform.rotate({ 0, 100.0f * dt, 0 });
+            camera.GetComponent<TransformComponent>()->rotate({ 0, 100.0f * dt, 0 });
         }
         if (Input::GetKey(GLFW_KEY_T)) {
-            camera.transform.rotate({ 0,-100.0f * dt, 0 });
+            camera.GetComponent<TransformComponent>()->rotate({ 0,-100.0f * dt, 0 });
         }
-        //std::cout << "OBJ: " << object.transform << std::endl;
-        /*std::cout << camera.transform << std::endl;*/
-        
     };
 
 
     void shutdown() override {};
 
-    MyGame() : camera(0, 0, { 0, 0, 0 }) {};
-
-    
-    Camera camera;
+    MyGame() {};
 
     GameObject object;
+    GameObject camera;
 };
 
 
