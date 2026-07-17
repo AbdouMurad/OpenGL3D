@@ -6,25 +6,80 @@ TransformComponent::TransformComponent(glm::vec3 Pos, glm::vec3 Size, glm::vec3 
 TransformComponent::TransformComponent(glm::vec3 Pos)
 	: position(Pos) {}
 
-glm::vec3 TransformComponent::getPosition() {
+
+glm::vec3 TransformComponent::getWorldPosition() const {
+	glm::mat4 world = getWorldMatrix();
+	return glm::vec3(world[3]);
+}
+glm::vec3 TransformComponent::getPosition() const {
 	return position;
 }
-glm::vec3 TransformComponent::getSize() {
+
+
+glm::vec3 TransformComponent::getWorldSize() const {
+	glm::mat4 world = getWorldMatrix();
+
+	return glm::vec3(
+		glm::length(glm::vec3(world[0])),
+		glm::length(glm::vec3(world[1])),
+		glm::length(glm::vec3(world[2]))
+	);
+}
+glm::vec3 TransformComponent::getSize() const {
 	return size;
 }
-glm::vec3 TransformComponent::getRotation() {
+
+glm::vec3 TransformComponent::getWorldRotation() const {
+	return glm::degrees(glm::eulerAngles(getWorldQuat()));
+}
+glm::vec3 TransformComponent::getRotation() const {
 	return glm::degrees(glm::eulerAngles(rotation));
 }
-glm::quat TransformComponent::getQuat() {
+
+glm::quat TransformComponent::getWorldQuat() const{
+	glm::mat4 world = getWorldMatrix();
+	glm::vec3 scale = {
+		glm::length(glm::vec3(world[0])),
+		glm::length(glm::vec3(world[1])),
+		glm::length(glm::vec3(world[2]))
+	};
+	glm::mat3 rot(
+		glm::vec3(world[0]) / scale.x,
+		glm::vec3(world[1]) / scale.y,
+		glm::vec3(world[2]) / scale.z
+	);
+	return glm::quat_cast(rot);
+}
+glm::quat TransformComponent::getQuat() const {
 	return rotation;
 }
 
-glm::mat4 TransformComponent::getMatrix() const {
-	glm::mat4 mat = glm::translate(glm::mat4(1.0f), position);
+glm::mat4 TransformComponent::getLocalMatrix() const
+{
+	glm::mat4 mat(1.0f);
+
+	mat = glm::translate(mat, position);
 	mat *= glm::mat4(rotation);
-	mat *= glm::scale(mat, size);
+	mat = glm::scale(mat, size);
 
 	return mat;
+}
+glm::mat4 TransformComponent::getWorldMatrix() const
+{
+	glm::mat4 parentMatrix(1.0f);
+	if (parent)
+	{
+		glm::mat4 parentWorld = parent->getWorldMatrix();
+
+		if (!inheritScale)
+		{
+			parentWorld[0] = glm::normalize(parentWorld[0]);
+			parentWorld[1] = glm::normalize(parentWorld[1]);
+			parentWorld[2] = glm::normalize(parentWorld[2]);
+		}
+		parentMatrix = parentWorld;
+	}
+	return parentMatrix * getLocalMatrix();
 }
 
 void TransformComponent::setPosition(glm::vec3 position) {
@@ -59,12 +114,21 @@ void TransformComponent::scale(float scale) {
 
 std::ostream& operator<<(std::ostream& os, const TransformComponent& transform) {
 	glm::vec3 EulerRotation = glm::degrees(glm::eulerAngles(transform.rotation));
+	glm::vec3 worldPos = transform.getWorldPosition();
 	os << "TransformComponent: {\n";
 	os << "	Position: { x: " << transform.position.x << ", y: " << transform.position.y << ", z: " << transform.position.z << "}\n";
 	os << "	Rotation: { x: " << EulerRotation.x << ", y: " << EulerRotation.y << ", z: " << EulerRotation.z << "}\n";
 	os << "	Size: { x: " << transform.size.x << ", y: " << transform.size.y << ", z: " << transform.size.z << "}\n";
+	os << "	World Position: { x: " << worldPos.x << ", y: " << worldPos.y << ", z: " << worldPos.z << "}\n";
 	os << "}\n";
 	return os;
+}
+
+
+//------------------Game Object-----------------
+void GameObject::Render(Renderer& renderer) {
+	MeshRenderer* component = GetComponent<MeshRenderer>();
+	if (component) component->Render(renderer);
 }
 
 
@@ -72,6 +136,5 @@ std::ostream& operator<<(std::ostream& os, const TransformComponent& transform) 
 MeshRenderer::MeshRenderer(ModelHandle m) : modelID(m) {};
 
 void MeshRenderer::Render(Renderer& renderer) {
-	TransformComponent* transform = owner->GetComponent<TransformComponent>();
-	renderer.Draw(AssetManager::Get().GetModel(modelID), *transform);
+	renderer.Draw(AssetManager::Get().GetModel(modelID), *(owner->GetComponent<TransformComponent>()));
 }

@@ -23,11 +23,16 @@ public:
 	int width;
 	int height;
 
+	float FOVdeg = 45.0f;
+	float nearPlane = 0.1f;
+	float farPlane = 100.0f;
+
 	CameraComponent(int width, int height);
 
 	void setViewport(int width, int height);
-	void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
+	void updateMatrix();
 	
 	glm::vec3 getOrientation();
+
 
 };

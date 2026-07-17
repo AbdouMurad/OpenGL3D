@@ -5,11 +5,11 @@ CameraComponent::CameraComponent(int width, int height) {
 	CameraComponent::height = height;
 }
 
-void CameraComponent::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {
+void CameraComponent::updateMatrix() {
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
 
-	glm::vec3 position = owner->GetComponent<TransformComponent>()->getPosition();
+	glm::vec3 position = owner->GetComponent<TransformComponent>()->getWorldPosition();
 
 	view = glm::lookAt(position, position + getOrientation(), Up);
 	
@@ -24,6 +24,6 @@ void CameraComponent::setViewport(int width, int height) {
 
 glm::vec3 CameraComponent::getOrientation() {
 	return glm::normalize(
-		owner->GetComponent<TransformComponent>()->getQuat() * glm::vec3(0, 0, -1)
+		owner->GetComponent<TransformComponent>()->getWorldQuat() * glm::vec3(0, 0, -1)
 	);
 }

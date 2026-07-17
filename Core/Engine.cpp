@@ -24,13 +24,16 @@ void Application::run(Game& game) {
 	while (!window.shouldClose()) {
 		Time::update();
 		float dt = Time::deltaTime();
+		
 		Input::Update();
 		window.pollEvents();	
 
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		game.update(dt, renderer);
+		game.scene.Update(dt);
+		game.update(dt);
+		game.scene.Render(renderer);
 
 		glfwSwapBuffers(window.getHandler());
 	}
