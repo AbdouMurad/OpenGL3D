@@ -24,7 +24,7 @@ public:
 	}
 
 	virtual void Start() {}
-	virtual void Update(float) {}
+	virtual void Update(float dt) {}
 
 };
 
@@ -34,16 +34,30 @@ private:
 	glm::quat rotation = glm::quat(1,0,0,0);
 	glm::vec3 size = glm::vec3(1, 1, 1);
 public:
+	TransformComponent* parent = nullptr;
+
+	bool inheritPosition = true;
+	bool inheritRotation = true;
+	bool inheritScale = true;
+
 	TransformComponent(glm::vec3 position, glm::vec3 size, glm::vec3 rotation);
 	TransformComponent(glm::vec3 position);
 	TransformComponent() = default;
 
-	glm::vec3 getPosition();
-	glm::vec3 getSize();
-	glm::vec3 getRotation();
-	glm::quat getQuat();
+	glm::vec3 getPosition() const;
+	glm::vec3 getWorldPosition() const;
 
-	glm::mat4 getMatrix() const;
+	glm::vec3 getSize() const;
+	glm::vec3 getWorldSize() const;
+
+	glm::vec3 getRotation() const;
+	glm::vec3 getWorldRotation() const;
+
+	glm::quat getQuat() const;
+	glm::quat getWorldQuat() const;
+
+	glm::mat4 getLocalMatrix() const;
+	glm::mat4 getWorldMatrix() const;
 
 	void setPosition(glm::vec3 pos);
 	void setSize(glm::vec3 size);
@@ -69,6 +83,8 @@ class GameObject {
 	std::vector<std::unique_ptr<Component>> components;
 
 public: 
+	void Render(Renderer& renderer);
+	
 	template<typename T, typename... Args>
 	T* AddComponent(Args&&... args) {
 		auto component = std::make_unique<T>(std::forward<Args>(args)...);
@@ -90,7 +106,6 @@ public:
 			if (auto cast = dynamic_cast<T*>(component.get()))
 				return cast;
 		}
-
 		return nullptr;
 	}
 
@@ -100,5 +115,3 @@ public:
 		}
 	}
 };
-
-

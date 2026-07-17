@@ -8,13 +8,13 @@ void Renderer::BeginFrame(const CameraComponent& camera) {
 	cameraMatrix = camera.cameraMatrix;
 }
 void Renderer::Draw(Model& model, TransformComponent& transform) {
-	glm::mat4 transformMat = transform.getMatrix();
+	glm::mat4 transformMat = transform.getWorldMatrix();
 
 	DrawNode(&(model.root), transformMat);
 }
 
 void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformComponent) {
-	glm::mat4 localTransformComponent = node->localTransformComponent.getMatrix();
+	glm::mat4 localTransformComponent = node->localTransformComponent.getLocalMatrix();
 
 	glm::mat4 worldTransformComponent = parentTransformComponent * localTransformComponent;
 	for (auto& p : node->primitives) {

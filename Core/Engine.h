@@ -7,13 +7,16 @@
 #include "Input.h"
 #include "Time_.h"
 #include "Render/Renderer.h"
+#include "Core/Scene.h"
 
 class Game {
 private:
 	
 public:
+	Scene scene;
+
 	virtual void start(float width, float height) {};
-	virtual void update(float dt, Renderer& renderer) {};
+	virtual void update(float dt) {};
 	virtual void shutdown() {};
 };
 
