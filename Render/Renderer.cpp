@@ -11,10 +11,6 @@ void Renderer::Render(RenderFrame& frame) {
 		Renderer::DrawNode(&(AssetManager::Get().GetModel(object.modelID).root), object.transform, frame.cameraMatrix);
 }
 
-//void Renderer::Draw(Model& model, glm::mat4 worldMatrix) {
-//	DrawNode(&(model.root), worldMatrix);
-//}
-
 void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformComponent, const glm::mat4& cameraMatrix) {
 	glm::mat4 localTransformComponent = node->localTransformComponent.getLocalMatrix();
 
