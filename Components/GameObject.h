@@ -9,7 +9,6 @@
 #include <iostream>
 #include "Core/Handlers.h"
 
-class Renderer;
 class GameObject;
 
 class Component {
@@ -75,15 +74,12 @@ class MeshRenderer : public Component {
 public:
 	ModelHandle modelID = 0;
 	MeshRenderer(ModelHandle m);
-
-	void Render(Renderer& renderer);
 };
 
 class GameObject {
 	std::vector<std::unique_ptr<Component>> components;
 
 public: 
-	void Render(Renderer& renderer);
 	
 	template<typename T, typename... Args>
 	T* AddComponent(Args&&... args) {

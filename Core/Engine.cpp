@@ -9,7 +9,7 @@ void Application::run(Game& game) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	window.init(width, height, name, false);
+	window.init(width, height, name, true);
 
 	gladLoadGL();
 	glEnable(GL_DEPTH_TEST);

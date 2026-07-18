@@ -4,7 +4,7 @@
 #include <string>
 
 #include "GPU/Buffer.h"
-#include "Components/Camera.h"
+#include "Components/GameObject.h"
 #include "Material.h"
 #include "Core/Handlers.h"
 

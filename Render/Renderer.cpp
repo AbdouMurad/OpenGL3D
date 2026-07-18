@@ -4,22 +4,22 @@ bool Renderer::init() {
 	return true;
 }
 
-void Renderer::BeginFrame(const CameraComponent& camera) {
-	cameraMatrix = camera.cameraMatrix;
-}
-void Renderer::Draw(Model& model, TransformComponent& transform) {
-	glm::mat4 transformMat = transform.getWorldMatrix();
+void Renderer::BeginFrame() {}
 
-	DrawNode(&(model.root), transformMat);
+void Renderer::Render(RenderFrame& frame) {
+	for (RenderObject& object : frame.renderObjects)
+		Renderer::DrawNode(&(AssetManager::Get().GetModel(object.modelID).root), object.transform, frame.cameraMatrix);
 }
 
-void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformComponent) {
+//void Renderer::Draw(Model& model, glm::mat4 worldMatrix) {
+//	DrawNode(&(model.root), worldMatrix);
+//}
+
+void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformComponent, const glm::mat4& cameraMatrix) {
 	glm::mat4 localTransformComponent = node->localTransformComponent.getLocalMatrix();
 
 	glm::mat4 worldTransformComponent = parentTransformComponent * localTransformComponent;
 	for (auto& p : node->primitives) {
-
-
 		Material& material = AssetManager::Get().GetMaterial(p.material);
 		Mesh& mesh = AssetManager::Get().GetMesh(p.mesh);
 
@@ -46,6 +46,6 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformComponent) {
 	}
 
 	for (auto& c : node->children) {
-		DrawNode(c.get(), worldTransformComponent);
+		DrawNode(c.get(), worldTransformComponent, cameraMatrix);
 	}
 }

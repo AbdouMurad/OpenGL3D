@@ -4,8 +4,12 @@
 #include <vector>
 
 #include "Components/Camera.h"
+#include "Components/Lights.h"
 
 class Renderer;
+class RenderLight;
+class RenderObject;
+class RenderFrame;
 
 class Scene {
 	std::vector<std::unique_ptr<GameObject>> objects;

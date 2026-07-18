@@ -7,16 +7,16 @@ public:
     void Update(float dt) override {
         
         if (Input::GetKey(GLFW_KEY_W)) {
-            owner->GetComponent<TransformComponent>()->translate({ 0,0, 8.0f * dt });
+            owner->GetComponent<TransformComponent>()->translate({ 0,0, 15.0f * dt });
         }
         if (Input::GetKey(GLFW_KEY_S)) {
-            owner->GetComponent<TransformComponent>()->translate({ 0,0, -8.0f * dt });
+            owner->GetComponent<TransformComponent>()->translate({ 0,0, -15.0f * dt });
         }
         if (Input::GetKey(GLFW_KEY_A)) {
-            owner->GetComponent<TransformComponent>()->rotate({ 0, 40.0f * dt, 0 });
+            owner->GetComponent<TransformComponent>()->rotate({ 0, 60.0f * dt, 0 });
         }
         if (Input::GetKey(GLFW_KEY_D)) {
-            owner->GetComponent<TransformComponent>()->rotate({ 0,-40.0f * dt, 0 });
+            owner->GetComponent<TransformComponent>()->rotate({ 0,-60.0f * dt, 0 });
         }
     };
 };
@@ -55,7 +55,7 @@ public:
 
 int main() {
     MyGame game;
-    Application app = Application(1280, 900, "GAME");
+    Application app = Application(1920, 1080, "GAME");
     app.run(game);
     return 0;
 }
