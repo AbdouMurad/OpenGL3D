@@ -26,11 +26,11 @@ class Renderer {
 public:
 
 	bool init();
-	void BeginFrame();
-	void Render(RenderFrame& frame);/*
-	void Draw(Model& model, glm::mat4 worldMatrix);*/
+	//void BeginFrame();
+	void Render(RenderFrame& frame);
 
 private:
+	RenderFrame* currentFrame = nullptr;
 	
-	void DrawNode(Node* node, const glm::mat4& parentTransformComponent, const glm::mat4& cameraMatrix);
+	void DrawNode(Node* node, const glm::mat4& parentTransformComponent);
 };

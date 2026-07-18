@@ -58,6 +58,10 @@ public:
 	glm::mat4 getLocalMatrix() const;
 	glm::mat4 getWorldMatrix() const;
 
+	glm::vec3 Forward() const;
+	glm::vec3 Right() const;
+	glm::vec3 Up() const;
+
 	void setPosition(glm::vec3 pos);
 	void setSize(glm::vec3 size);
 	void setRotation(glm::vec3 rotation);

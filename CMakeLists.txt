@@ -37,7 +37,7 @@ add_executable(OpenGL3D
 
     Components/Camera.cpp
     Components/Camera.h
- "Components/GameObject.h" "Components/GameObject.cpp" "Core/AssetManager.h" "Core/AssetManager.cpp" "Core/Handlers.h" "Core/ShaderManager.h" "Core/ShaderManager.cpp" "Core/Scene.cpp" "Core/Scene.h"  "Components/Lights.h")
+ "Components/GameObject.h" "Components/GameObject.cpp" "Core/AssetManager.h" "Core/AssetManager.cpp" "Core/Handlers.h" "Core/ShaderManager.h" "Core/ShaderManager.cpp" "Core/Scene.cpp" "Core/Scene.h"  "Components/Lights.h" "Components/Lights.cpp")
 
 target_include_directories(OpenGL3D PRIVATE
     ${CMAKE_SOURCE_DIR}

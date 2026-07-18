@@ -9,7 +9,7 @@ void Application::run(Game& game) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	window.init(width, height, name, true);
+	window.init(width, height, name, false);
 
 	gladLoadGL();
 	glEnable(GL_DEPTH_TEST);
@@ -28,7 +28,7 @@ void Application::run(Game& game) {
 		Input::Update();
 		window.pollEvents();	
 
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClearColor(0.529, 0.808f, 0.922f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		game.scene.Update(dt);
