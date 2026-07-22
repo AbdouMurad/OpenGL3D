@@ -29,7 +29,7 @@ void Scene::Render(Renderer& renderer) {
 	RenderFrame frame;
 	GetMainCamera()->updateMatrix();
 	frame.cameraMatrix = GetMainCamera()->cameraMatrix;
-
+	frame.cameraPosition = GetMainCamera()->getPosition();
 	for (std::unique_ptr<GameObject>& object : objects) {
 		auto* light = object.get()->GetComponent<PointLightComponent>();
 		auto* transform = object.get()->GetComponent<TransformComponent>();

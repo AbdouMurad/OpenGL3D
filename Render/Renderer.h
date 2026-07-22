@@ -8,7 +8,7 @@ struct RenderLight {
 	glm::vec3 position; //switch to mat4
 	glm::vec3 color;
 	float intensity;
-	float radius;
+	float range;
 };
 
 struct RenderObject {
@@ -20,6 +20,7 @@ struct RenderFrame {
 	std::vector<RenderObject> renderObjects;
 	std::vector<RenderLight> lights;
 	glm::mat4 cameraMatrix = glm::mat4(1.0f);
+	glm::vec3 cameraPosition = glm::vec3(0.0f);
 };
 
 class Renderer {

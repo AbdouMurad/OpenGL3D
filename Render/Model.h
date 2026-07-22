@@ -23,8 +23,8 @@ public:
 };
 
 struct Primitive {
-	MeshHandle mesh;
-	MaterialHandle material;
+	MeshHandle mesh = 0;
+	MaterialHandle material = 0;
 };
 
 struct Node {

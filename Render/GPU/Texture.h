@@ -4,22 +4,33 @@
 #include <stb_image.h>
 
 #include"shaderClass.h"
-
+enum TextureSlot {
+	BASE_COLOR_SLOT = 0,
+	NORMAL_SLOT = 1,
+	METALLIC_ROUGHNESS_SLOT = 2,
+	EMISSIVE_SLOT = 3
+};
+enum class TextureType
+{
+	BaseColor,
+	Normal,
+	MetallicRoughness,
+	Emissive
+};
 class Texture
 {
 public:
 	GLuint ID = 0;
-	GLuint unit = 0;
-	const char* type;
+	TextureType type;
 
 	~Texture();
-	Texture(const char* image, const char* texType, GLenum slot, GLenum format, GLenum pixelType);
-	Texture(const char* image, const char* texType);
+	Texture(const char* image, TextureType type, GLenum format, GLenum pixelType);
+	Texture(const char* image, TextureType type);
 
 	// Assigns a texture unit to a texture
 	void texUnit(Shader& shader, const char* uniform, GLuint unit);
 	// Binds a texture
-	void Bind();
+	void Bind(GLuint slot);
 	// Unbinds a texture
 	void Unbind();
 	// Deletes a texture

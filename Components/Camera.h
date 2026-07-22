@@ -33,6 +33,6 @@ public:
 	void updateMatrix();
 	
 	glm::vec3 getOrientation();
-
+	glm::vec3 getPosition();
 
 };

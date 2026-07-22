@@ -3,8 +3,8 @@
 
 struct GLTFPrimitive
 {
-	MeshHandle mesh;
-	MaterialHandle material;
+	MeshHandle mesh = 0;
+	MaterialHandle material = 0;
 };
 
 struct AccessorView {
@@ -14,6 +14,21 @@ struct AccessorView {
 	int typeCount;
 	int stride;
 };
+
+static std::string DecodeURI(const std::string& uri) {
+	std::string result;
+	for (size_t i = 0; i < uri.size(); ++i) {
+		if (uri[i] == '%' && i + 2 < uri.size()) {
+			std::string hex = uri.substr(i + 1, 2);
+			result += static_cast<char>(std::stoi(hex, nullptr, 16));
+			i += 2;
+		}
+		else {
+			result += uri[i];
+		}
+	}
+	return result;
+}
 
 static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::filesystem::path& gltfDirectory) {
 	//Depending on what data is available about the mesh -> build material
@@ -35,6 +50,26 @@ static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::fil
 		if (pbr.contains("roughnessFactor")) {
 			material.properties.roughness = pbr["roughnessFactor"];
 		}
+		if (pbr.contains("mettalicRoughnessTexture")) {
+			int textureIndex = pbr["mettalicRoughnessTexture"]["index"];
+
+			const json& texture = data.textures[textureIndex];
+
+			int imageIndex = texture["source"];
+			const json& image = data.images[imageIndex];
+
+			std::string imageURI = image["uri"];
+
+			std::filesystem::path texturePath =
+				gltfDirectory / imageURI;
+
+			material.textures.metallicRoughness =
+				AssetManager::Get().LoadTexture(
+					texturePath.string(),
+					TextureType::MetallicRoughness
+				);
+			material.flags |= MATERIAL_METALLIC_ROUGHNESS;
+		}
 		if (pbr.contains("baseColorTexture")) {
 			int textureIndex = pbr["baseColorTexture"]["index"];
 
@@ -49,13 +84,35 @@ static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::fil
 			std::filesystem::path texturePath =
 				gltfDirectory / imageURI;
 
-			std::cout << texturePath << std::endl;
 			material.textures.baseColor =
 				AssetManager::Get().LoadTexture(
 					texturePath.string(),
-					"diffuse"
+					TextureType::BaseColor
 				);
 			material.flags |= MATERIAL_BASE_COLOR_TEXTURE;
+		}
+	}
+	if (gltfMaterial.contains("normalTexture")) {
+		int textureIndex = gltfMaterial["normalTexture"]["index"];
+
+		const json& texture = data.textures[textureIndex];
+
+		int imageIndex = texture["source"];
+
+		const json& image = data.images[imageIndex];
+
+		std::string imageURI = image["uri"];
+
+		std::filesystem::path texturePath = gltfDirectory / imageURI;
+
+		material.textures.normal = AssetManager::Get().LoadTexture(
+			texturePath.string(),
+			TextureType::Normal
+		);
+		material.flags |= MATERIAL_NORMAL_MAP;
+
+		if (gltfMaterial["normalTexture"].contains("scale")) {
+			material.properties.normalScale = gltfMaterial["normalTexture"]["scale"];
 		}
 	}
 
@@ -100,7 +157,6 @@ static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vecto
 	if (gltfNode.contains("children")) {
 		for (int childIndex : gltfNode["children"]) {
 			auto child = std::make_unique<Node>(&node);
-
 			LoadNode(*child, childIndex, data, meshMap);
 
 			node.children.push_back(std::move(child));
@@ -161,8 +217,11 @@ AccessorView GetAccessor(GLTFData& data, int accessorIndex) {
 static Model* loadGLTF(const std::string& filePath) {
 	//load file into memory 
 	std::ifstream file(filePath);
-	if (!file.is_open()) return nullptr;
-
+	if (!file.is_open())
+	{
+		std::cout << "FILE COULD NOT BE OPENed: " << filePath << std::endl;
+		return nullptr;
+	}
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 
@@ -171,7 +230,7 @@ static Model* loadGLTF(const std::string& filePath) {
 	//parse glTF json into intermediate representation
 
 	json gltf = json::parse(jsonText);
-	std::cout << gltf << std::endl;
+	//std::cout << gltf << std::endl;
 	GLTFData data;
 	data.scenes		 = gltf["scenes"];
 	data.nodes		 = gltf["nodes"];
@@ -191,12 +250,14 @@ static Model* loadGLTF(const std::string& filePath) {
 	for (size_t i = 0; i < data.buffers.size(); ++i) {
 		const json& bufferDef = data.buffers[i];
 
-		std::filesystem::path bufferPath = gltfDirectory / bufferDef["uri"].get<std::string>();
+		std::filesystem::path bufferPath = gltfDirectory / DecodeURI(bufferDef["uri"]);;
 
 		std::ifstream file(bufferPath, std::ios::binary);
 
-		if (!file.is_open()) return nullptr; 
-		
+		if (!file.is_open()) {
+			std::cout << "FILE COULD NOT BE OPENED: " << bufferPath << std::endl;
+			return nullptr;
+		}
 
 		file.seekg(0, std::ios::end);
 		size_t size = file.tellg();
@@ -240,7 +301,6 @@ static Model* loadGLTF(const std::string& filePath) {
 					p[i * 3 + 2]
 				);
 			}
-			
 			//__________________NORMAL_______________________
 			if (attributes.contains("NORMAL")) {
 				
@@ -258,7 +318,6 @@ static Model* loadGLTF(const std::string& filePath) {
 					);
 				}
 			}
-			
 			//_________________TEX_COORDS_____________
 			if (attributes.contains("TEXCOORD_0")) {
 				int texCoordAccessorIndex = attributes["TEXCOORD_0"];
@@ -275,8 +334,6 @@ static Model* loadGLTF(const std::string& filePath) {
 					);
 				}
 			}
-
-
 			//__________________INDICES_______________
 
 			
@@ -305,7 +362,73 @@ static Model* loadGLTF(const std::string& filePath) {
 					indices[i] = idx[i];
 				}
 			}
+			//---------------------TANGENT-----------------------
+			if (attributes.contains("TANGENT")) {
+				int tangentCoordAccessorIndex = attributes["TANGENT"];
 
+				AccessorView tang = GetAccessor(data, tangentCoordAccessorIndex);
+
+				float* tangData = reinterpret_cast<float*>(tang.data);
+
+				for (int i = 0; i < tang.count; ++i) {
+					vertices[i].tangent = glm::vec4(
+						tangData[i * 4 + 0],
+						tangData[i * 4 + 1],
+						tangData[i * 4 + 2],
+						tangData[i * 4 + 3]
+					);
+				}
+			}
+			//if no tangent but there is normal + uv + position-> calculate tangent
+			else if (attributes.contains("NORMAL") && attributes.contains("TEXCOORD_0") && attributes.contains("POSITION")) {
+				
+				std::vector<TangentData> tangentData(vertices.size());
+				for (size_t i = 0; i < indices.size(); i += 3) {
+					Vertex& v0 = vertices[indices[i]];
+					Vertex& v1 = vertices[indices[i + 1]];
+					Vertex& v2 = vertices[indices[i + 2]];
+
+					glm::vec3 edge1 = v1.position - v0.position;
+					glm::vec3 edge2 = v2.position - v0.position;
+
+					glm::vec2 deltaUV1 = v1.texUV - v0.texUV;
+					glm::vec2 deltaUV2 = v2.texUV - v0.texUV;
+
+					float det = (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+					if (std::abs(det) < 1e-8f) continue;
+					float f = 1.0f / det;
+
+					glm::vec4 tangent = glm::vec4(0.0f);
+					tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+					tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+					tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+					tangentData[indices[i]].tangent += tangent;
+					tangentData[indices[i + 1]].tangent += tangent;
+					tangentData[indices[i + 2]].tangent += tangent;
+
+					glm::vec3 bitangent = glm::vec3(0.0f);
+					bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+					bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+					bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+					tangentData[indices[i]].bitangent += bitangent;
+					tangentData[indices[i + 1]].bitangent += bitangent;
+					tangentData[indices[i + 2]].bitangent += bitangent;
+				}
+
+				for (size_t i = 0; i < vertices.size(); ++i) {
+					glm::vec3 T = glm::normalize(
+						tangentData[i].tangent - vertices[i].normal * glm::dot(vertices[i].normal, tangentData[i].tangent)
+					);
+
+					float w = glm::dot(
+						glm::cross(vertices[i].normal, T), tangentData[i].bitangent
+					) < 0.0f ? -1.0f : 1.0f;
+					
+					vertices[i].tangent = glm::vec4(T, w);
+				}
+			}
 			MeshHandle meshHandle = AssetManager::Get().CreateMesh(vertices, indices);
 
 			MaterialHandle materialHandle = 0;
@@ -318,7 +441,6 @@ static Model* loadGLTF(const std::string& filePath) {
 
 			gltfPrimitive.mesh = meshHandle;
 			gltfPrimitive.material = materialHandle;
-			std::cout << "NEW MESH" << std::endl;
 			meshMap[meshIndex].push_back(gltfPrimitive);
 		}
 	}
@@ -334,7 +456,6 @@ static Model* loadGLTF(const std::string& filePath) {
 	for (int rootNodeIndex : scene["nodes"]) {
 		auto child = std::make_unique<Node>(&model->root);
 		LoadNode(*child, rootNodeIndex, data, meshMap);
-
 		model->root.children.push_back(std::move(child));
 	}
 
@@ -355,8 +476,8 @@ ModelHandle AssetManager::LoadModel(const std::string& path) {
 	models[nextID] = std::unique_ptr<Model>(model);
 	return nextID++;
 }
-TextureHandle AssetManager::LoadTexture(const std::string& path, const std::string& texType) {
-	textures[nextID] = std::make_unique<Texture>(path.c_str(), texType.c_str());
+TextureHandle AssetManager::LoadTexture(const std::string& path, TextureType type) {
+	textures[nextID] = std::make_unique<Texture>(path.c_str(), type);
 	return nextID++;
 }
 ShaderHandle AssetManager::LoadShader(const std::string& vertexFile, const std::string& fragmentFile) {
