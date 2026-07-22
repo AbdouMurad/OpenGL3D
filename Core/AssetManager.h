@@ -41,7 +41,7 @@ public:
     // LOAD (from file)
     // ======================
     ModelHandle LoadModel(const std::string& path);
-    TextureHandle LoadTexture(const std::string& path, const std::string& texType);
+    TextureHandle LoadTexture(const std::string& path, TextureType type);
     ShaderHandle LoadShader(const std::string& vertexFile, const std::string& fragmentFile);
 
     // Meshes are SPECIAL (usually generated, not loaded)

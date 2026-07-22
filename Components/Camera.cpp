@@ -27,3 +27,6 @@ glm::vec3 CameraComponent::getOrientation() {
 		owner->GetComponent<TransformComponent>()->getWorldQuat() * glm::vec3(0, 0, -1)
 	);
 }
+glm::vec3 CameraComponent::getPosition() {
+	return owner->GetComponent<TransformComponent>()->getWorldPosition();
+}

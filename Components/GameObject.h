@@ -9,7 +9,6 @@
 #include <iostream>
 #include "Core/Handlers.h"
 
-class Renderer;
 class GameObject;
 
 class Component {
@@ -59,6 +58,10 @@ public:
 	glm::mat4 getLocalMatrix() const;
 	glm::mat4 getWorldMatrix() const;
 
+	glm::vec3 Forward() const;
+	glm::vec3 Right() const;
+	glm::vec3 Up() const;
+
 	void setPosition(glm::vec3 pos);
 	void setSize(glm::vec3 size);
 	void setRotation(glm::vec3 rotation);
@@ -75,15 +78,12 @@ class MeshRenderer : public Component {
 public:
 	ModelHandle modelID = 0;
 	MeshRenderer(ModelHandle m);
-
-	void Render(Renderer& renderer);
 };
 
 class GameObject {
 	std::vector<std::unique_ptr<Component>> components;
 
 public: 
-	void Render(Renderer& renderer);
 	
 	template<typename T, typename... Args>
 	T* AddComponent(Args&&... args) {

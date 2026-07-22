@@ -9,6 +9,12 @@ struct Vertex {
 	glm::vec3 position = glm::vec3(0.0f);
 	glm::vec3 normal = glm::vec3(0.0f);
 	glm::vec2 texUV = glm::vec2(0.0f);
+	glm::vec4 tangent = glm::vec4(0.0f);
+};
+
+struct TangentData {
+	glm::vec3 tangent;
+	glm::vec3 bitangent;
 };
 
 class VBO {

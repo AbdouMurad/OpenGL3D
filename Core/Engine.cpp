@@ -13,6 +13,7 @@ void Application::run(Game& game) {
 
 	gladLoadGL();
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_FRAMEBUFFER_SRGB);
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
 	glViewport(0, 0, width, height);
@@ -28,7 +29,8 @@ void Application::run(Game& game) {
 		Input::Update();
 		window.pollEvents();	
 
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClearColor(0.529, 0.808f, 0.922f, 1.0f);
+		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		game.scene.Update(dt);

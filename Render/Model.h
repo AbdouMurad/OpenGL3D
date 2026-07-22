@@ -4,7 +4,7 @@
 #include <string>
 
 #include "GPU/Buffer.h"
-#include "Components/Camera.h"
+#include "Components/GameObject.h"
 #include "Material.h"
 #include "Core/Handlers.h"
 
@@ -23,8 +23,8 @@ public:
 };
 
 struct Primitive {
-	MeshHandle mesh;
-	MaterialHandle material;
+	MeshHandle mesh = 0;
+	MaterialHandle material = 0;
 };
 
 struct Node {

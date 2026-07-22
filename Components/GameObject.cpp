@@ -1,5 +1,4 @@
 #include "GameObject.h"
-#include "Render/Renderer.h"
 
 TransformComponent::TransformComponent(glm::vec3 Pos, glm::vec3 Size, glm::vec3 Rot)
 	:	position(Pos), size(Size), rotation(glm::quat(glm::radians(Rot))) {}
@@ -112,6 +111,16 @@ void TransformComponent::scale(float scale) {
 	size *= scale;
 }
 
+glm::vec3 TransformComponent::Forward() const {
+	return glm::normalize(rotation * glm::vec3(0, 0, -1));
+}
+glm::vec3 TransformComponent::Right() const {
+	return glm::normalize(rotation * glm::vec3(1, 0, 0));
+}
+glm::vec3 TransformComponent::Up() const {
+	return glm::normalize(rotation * glm::vec3(0, 1, 0));
+}
+
 std::ostream& operator<<(std::ostream& os, const TransformComponent& transform) {
 	glm::vec3 EulerRotation = glm::degrees(glm::eulerAngles(transform.rotation));
 	glm::vec3 worldPos = transform.getWorldPosition();
@@ -125,16 +134,6 @@ std::ostream& operator<<(std::ostream& os, const TransformComponent& transform) 
 }
 
 
-//------------------Game Object-----------------
-void GameObject::Render(Renderer& renderer) {
-	MeshRenderer* component = GetComponent<MeshRenderer>();
-	if (component) component->Render(renderer);
-}
-
 
 //-------------------Mesh Renderer-----------------
 MeshRenderer::MeshRenderer(ModelHandle m) : modelID(m) {};
-
-void MeshRenderer::Render(Renderer& renderer) {
-	renderer.Draw(AssetManager::Get().GetModel(modelID), *(owner->GetComponent<TransformComponent>()));
-}
