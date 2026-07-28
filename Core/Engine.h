@@ -15,15 +15,15 @@ private:
 public:
 	Scene scene;
 
-	virtual void start(float width, float height) {};
-	virtual void update(float dt) {};
-	virtual void shutdown() {};
+	virtual void Start(float width, float height) {};
+	virtual void Update(float dt) {};
+	virtual void Shutdown() {};
 };
 
 class Application {
 public:
 	Application(int width, int height, std::string applciationName);
-	void run(Game& game);
+	void Run(Game& game);
 
 private:
 	void shutdown();

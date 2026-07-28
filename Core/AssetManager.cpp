@@ -1,6 +1,5 @@
 #include "AssetManager.h"
 
-
 struct GLTFPrimitive
 {
 	MeshHandle mesh = 0;
@@ -126,20 +125,20 @@ static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vecto
 	{
 		auto& t = gltfNode["translation"];
 
-		node.localTransformComponent.setPosition(glm::vec3(t[0], t[1], t[2]));
+		node.localTransformComponent.SetPosition(glm::vec3(t[0], t[1], t[2]));
 	}
 	if (gltfNode.contains("scale"))
 	{
 		auto& s = gltfNode["scale"];
 
-		node.localTransformComponent.setSize(glm::vec3(s[0], s[1], s[2]));
+		node.localTransformComponent.SetSize(glm::vec3(s[0], s[1], s[2]));
 	}
 	if (gltfNode.contains("rotation")) {
 		auto& r = gltfNode["rotation"];
 
 		glm::quat rotation(r[3], r[0], r[1], r[2]);
 
-		node.localTransformComponent.setRotation(rotation);
+		node.localTransformComponent.SetRotation(rotation);
 	}
 
 	if (gltfNode.contains("mesh")) {

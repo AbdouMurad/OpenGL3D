@@ -5,28 +5,29 @@ CameraComponent::CameraComponent(int width, int height) {
 	CameraComponent::height = height;
 }
 
-void CameraComponent::updateMatrix() {
+void CameraComponent::UpdateMatrix() {
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
 
-	glm::vec3 position = owner->GetComponent<TransformComponent>()->getWorldPosition();
+	TransformComponent* transform = owner->GetComponent<TransformComponent>();
+	
 
-	view = glm::lookAt(position, position + getOrientation(), Up);
+	view = glm::lookAt(transform->GetPosition(), transform->GetPosition() + GetOrientation(), transform->Up());
 	
 	projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
 	cameraMatrix = projection * view;
 }
 
-void CameraComponent::setViewport(int width, int height) {
+void CameraComponent::SetViewport(int width, int height) {
 	CameraComponent::width = width;
 	CameraComponent::height = height;
 }
 
-glm::vec3 CameraComponent::getOrientation() {
+glm::vec3 CameraComponent::GetOrientation() {
 	return glm::normalize(
-		owner->GetComponent<TransformComponent>()->getWorldQuat() * glm::vec3(0, 0, -1)
+		owner->GetComponent<TransformComponent>()->GetQuat() * glm::vec3(0, 0, -1)
 	);
 }
-glm::vec3 CameraComponent::getPosition() {
-	return owner->GetComponent<TransformComponent>()->getWorldPosition();
+glm::vec3 CameraComponent::GetPosition() {
+	return owner->GetComponent<TransformComponent>()->GetPosition();
 }

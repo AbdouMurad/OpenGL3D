@@ -6,16 +6,16 @@
 
 class Window {
 public:
-	bool init(int width, int height, std::string name, bool fullscreen);
-	void swapBuffers();
-	void pollEvents();
-	bool shouldClose();
-	void shutdown();
+	bool Init(int width, int height, std::string name, bool fullscreen);
+	void SwapBuffers();
+	void PollEvents();
+	bool ShouldClose();
+	void Shutdown();
 
-	int getWindowWidth() const { return width; }
-	int getWindowHeight() const { return height; }
+	int GetWindowWidth() const { return width; }
+	int GetWindowHeight() const { return height; }
 
-	GLFWwindow* getHandler() const { return handler; }
+	GLFWwindow* GetHandler() const { return handler; }
 private:
 	GLFWwindow* handler = nullptr;
 	int width = 720;

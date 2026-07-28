@@ -6,6 +6,8 @@
 #include "Components/Camera.h"
 #include "Components/Lights.h"
 
+#include "Physics/PhysicsWorld.h"
+
 class Renderer;
 class RenderLight;
 class RenderObject;
@@ -16,12 +18,14 @@ class Scene {
 
 	GameObject* mainCamera = nullptr;
 
+	PhysicsWorld physics;
 public:
 	GameObject& CreateObject();
 
 	void SetMainCamera(GameObject& camera);
 	CameraComponent* GetMainCamera();
 
+	void Start();
 	void Update(float dt);
 	void Render(Renderer& renderer);
 

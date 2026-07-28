@@ -1,6 +1,6 @@
 #include "Window.h"
 
-bool Window::init(int w, int h, std::string windowName, bool fullscreen) {
+bool Window::Init(int w, int h, std::string windowName, bool fullscreen) {
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
@@ -23,16 +23,16 @@ bool Window::init(int w, int h, std::string windowName, bool fullscreen) {
 
 	return true;
 }
-void Window::swapBuffers() {
+void Window::SwapBuffers() {
 	glfwSwapBuffers(handler);
 }
-bool Window::shouldClose() {
+bool Window::ShouldClose() {
 	return glfwWindowShouldClose(handler);
 }
-void Window::pollEvents() {
+void Window::PollEvents() {
 	glfwPollEvents();
 }
-void Window::shutdown() {
+void Window::Shutdown() {
 	glfwDestroyWindow(handler);
 	glfwTerminate();
 }

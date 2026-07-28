@@ -27,49 +27,51 @@ public:
 
 };
 
+struct Transform {
+	glm::vec3 position = glm::vec3(0);
+	glm::quat rotation = glm::quat(1, 0, 0, 0);
+	glm::vec3 size = glm::vec3(1);
+
+	glm::mat4 GetMatrix() const;
+};
+
 class TransformComponent : public Component {
 private:
-	glm::vec3 position = glm::vec3(0,0,0);
-	glm::quat rotation = glm::quat(1,0,0,0);
-	glm::vec3 size = glm::vec3(1, 1, 1);
+	Transform local;
 public:
 	TransformComponent* parent = nullptr;
-
-	bool inheritPosition = true;
-	bool inheritRotation = true;
-	bool inheritScale = true;
 
 	TransformComponent(glm::vec3 position, glm::vec3 size, glm::vec3 rotation);
 	TransformComponent(glm::vec3 position);
 	TransformComponent() = default;
 
-	glm::vec3 getPosition() const;
-	glm::vec3 getWorldPosition() const;
+	glm::vec3 GetLocalPosition() const;
+	glm::vec3 GetPosition() const;
 
-	glm::vec3 getSize() const;
-	glm::vec3 getWorldSize() const;
+	glm::vec3 GetLocalSize() const;
+	glm::vec3 GetSize() const;
 
-	glm::vec3 getRotation() const;
-	glm::vec3 getWorldRotation() const;
+	glm::vec3 GetLocalRotation() const;
+	glm::vec3 GetRotation() const;
 
-	glm::quat getQuat() const;
-	glm::quat getWorldQuat() const;
+	glm::quat GetLocalQuat() const;
+	glm::quat GetQuat() const;
 
-	glm::mat4 getLocalMatrix() const;
-	glm::mat4 getWorldMatrix() const;
+	glm::mat4 GetLocalMatrix() const;
+	glm::mat4 GetMatrix() const;
 
 	glm::vec3 Forward() const;
 	glm::vec3 Right() const;
 	glm::vec3 Up() const;
 
-	void setPosition(glm::vec3 pos);
-	void setSize(glm::vec3 size);
-	void setRotation(glm::vec3 rotation);
-	void setRotation(glm::quat rotation);
+	void SetPosition(const glm::vec3& pos);
+	void SetSize(const glm::vec3& size);
+	void SetRotation(const glm::vec3& rotation);
+	void SetRotation(const glm::quat& rotation);
 
-	void translate(glm::vec3 delta);
-	void rotate(glm::vec3 rotation);
-	void scale(float scale);
+	void Translate(const glm::vec3& delta);
+	void Rotate(const glm::vec3& rotation);
+	void Scale(float scale);
 
 	friend std::ostream& operator<<(std::ostream& os, const TransformComponent& transform);
 };
