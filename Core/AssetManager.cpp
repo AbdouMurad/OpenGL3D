@@ -1,6 +1,5 @@
 #include "AssetManager.h"
 
-
 struct GLTFPrimitive
 {
 	MeshHandle mesh = 0;
@@ -126,20 +125,20 @@ static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vecto
 	{
 		auto& t = gltfNode["translation"];
 
-		node.localTransformComponent.setPosition(glm::vec3(t[0], t[1], t[2]));
+		node.localTransformComponent.SetPosition(glm::vec3(t[0], t[1], t[2]));
 	}
 	if (gltfNode.contains("scale"))
 	{
 		auto& s = gltfNode["scale"];
 
-		node.localTransformComponent.setSize(glm::vec3(s[0], s[1], s[2]));
+		node.localTransformComponent.SetSize(glm::vec3(s[0], s[1], s[2]));
 	}
 	if (gltfNode.contains("rotation")) {
 		auto& r = gltfNode["rotation"];
 
 		glm::quat rotation(r[3], r[0], r[1], r[2]);
 
-		node.localTransformComponent.setRotation(rotation);
+		node.localTransformComponent.SetRotation(rotation);
 	}
 
 	if (gltfNode.contains("mesh")) {
@@ -216,6 +215,7 @@ AccessorView GetAccessor(GLTFData& data, int accessorIndex) {
 //Optimize by making a helper function -> lots of repeated logic
 static Model* loadGLTF(const std::string& filePath) {
 	//load file into memory 
+	std::cout << "Loading Model: " << filePath << std::endl;
 	std::ifstream file(filePath);
 	if (!file.is_open())
 	{
@@ -241,6 +241,9 @@ static Model* loadGLTF(const std::string& filePath) {
 	data.materials   = gltf.value("materials", json::array());
 	data.textures    = gltf.value("textures", json::array());
 	data.images      = gltf.value("images", json::array());
+
+	//std::cout << data.bufferViews << std::endl;
+	//std::cout << data.buffers << std::endl;
 
 	std::filesystem::path gltfDirectory =
 		std::filesystem::path(filePath).parent_path();
@@ -300,6 +303,7 @@ static Model* loadGLTF(const std::string& filePath) {
 					p[i * 3 + 1],
 					p[i * 3 + 2]
 				);
+				//std::cout << p[i * 3] << " " << p[i * 3 + 1] << " " << p[i * 3 + 2] << std::endl;
 			}
 			//__________________NORMAL_______________________
 			if (attributes.contains("NORMAL")) {
@@ -449,10 +453,10 @@ static Model* loadGLTF(const std::string& filePath) {
 	Model* model = new Model();
 	
 	int sceneIndex = gltf.value("scene", 0);
-	const json& scene = data.scenes[sceneIndex];
+	const json& scene = data.scenes[sceneIndex];/*
 	std::cout << "Nodes: " << data.nodes.size() << "\n";
 	std::cout << "Meshes: " << data.meshes.size() << "\n";
-	std::cout << "Materials: " << data.materials.size() << "\n";
+	std::cout << "Materials: " << data.materials.size() << "\n";*/
 	for (int rootNodeIndex : scene["nodes"]) {
 		auto child = std::make_unique<Node>(&model->root);
 		LoadNode(*child, rootNodeIndex, data, meshMap);
@@ -472,9 +476,16 @@ AssetManager& AssetManager::Get() {
 }
 
 ModelHandle AssetManager::LoadModel(const std::string& path) {
-	Model* model = loadGLTF(path);
-	models[nextID] = std::unique_ptr<Model>(model);
+	auto model = modelCache.find(path);
+	if (model != modelCache.end()) {
+		return model->second;
+	}
+	Model* newModel = loadGLTF(path);
+	models[nextID] = std::unique_ptr<Model>(newModel);
+	modelCache[path] = nextID;
 	return nextID++;
+	
+	
 }
 TextureHandle AssetManager::LoadTexture(const std::string& path, TextureType type) {
 	textures[nextID] = std::make_unique<Texture>(path.c_str(), type);
@@ -534,5 +545,6 @@ void AssetManager::Clear() {
 	textures.clear();
 	materials.clear();
 	shaders.clear();
+	modelCache.clear();
 	shaderCache.clear();
 }

@@ -4,8 +4,8 @@
 
 class Time {
 public:
-	static void update();
-	static float deltaTime();
+	static void Update();
+	static float DeltaTime();
 
 private:
 	static float dt;

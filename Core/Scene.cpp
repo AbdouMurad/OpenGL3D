@@ -6,6 +6,7 @@ GameObject& Scene::CreateObject() {
 	GameObject* ptr = object.get();
 	ptr->AddComponent<TransformComponent>();
 	objects.push_back(std::move(object));
+	dirtyScene = true;
 	return *ptr;
 }
 
@@ -17,19 +18,32 @@ CameraComponent* Scene::GetMainCamera() {
 	return mainCamera->GetComponent<CameraComponent>();
 }
 
+void Scene::Start() {
+	physics.colliders.clear();
+	physics.bodies.clear();
+	for (std::unique_ptr<GameObject>& object : objects) {
+		RigidBodyComponent* rb = object->GetComponent<RigidBodyComponent>();
+		ColliderComponent* c = object->GetComponent<ColliderComponent>();
+		if (c) physics.colliders.push_back(c);
+		if (rb) physics.bodies.push_back(rb);
+	}
+	dirtyScene = false;
+}
 void Scene::Update(float dt) {
+	if (dirtyScene) Start();
 	for (std::unique_ptr<GameObject>& object : objects) {
 		object->Update(dt);
 	}
+	physics.Step(dt);
 }
 
 void Scene::Render(Renderer& renderer) {
 	
 	//renderer.BeginFrame(); Not needed rn
 	RenderFrame frame;
-	GetMainCamera()->updateMatrix();
+	GetMainCamera()->UpdateMatrix();
 	frame.cameraMatrix = GetMainCamera()->cameraMatrix;
-	frame.cameraPosition = GetMainCamera()->getPosition();
+	frame.cameraPosition = GetMainCamera()->GetPosition();
 	for (std::unique_ptr<GameObject>& object : objects) {
 		auto* light = object.get()->GetComponent<PointLightComponent>();
 		auto* transform = object.get()->GetComponent<TransformComponent>();
@@ -37,14 +51,14 @@ void Scene::Render(Renderer& renderer) {
 		if (!transform) continue;
 		if (light)
 			frame.lights.push_back({
-				transform->getWorldPosition(),
+				transform->GetPosition(),
 				light->color, //write getters and setters
 				light->intensity,
 				light->range
 			});
 		if (mesh) {
 			frame.renderObjects.push_back({
-				transform->getWorldMatrix(),
+				transform->GetMatrix(),
 				mesh->modelID
 			});
 		}

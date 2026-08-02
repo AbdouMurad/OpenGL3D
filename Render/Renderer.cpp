@@ -14,7 +14,7 @@ void Renderer::Render(RenderFrame& frame) {
 }
 
 void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
-	glm::mat4 localTransformMatrix = node->localTransformComponent.getLocalMatrix();
+	glm::mat4 localTransformMatrix = node->localTransformComponent.GetLocalMatrix();
 
 	glm::mat4 worldTransformMatrix = parentTransformMatrix * localTransformMatrix;
 	for (auto& p : node->primitives) {
@@ -63,7 +63,7 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 		glm::vec3 position = worldTransformMatrix[3];
 		std::vector<RenderLight> lights;
 		for (auto& light : currentFrame->lights) {
-			if (glm::distance(position, light.position) < light.range) {
+			if (glm::distance(position, light.position) < light.range * 3.0f) {
 				lights.push_back(light);
 			}
 		}

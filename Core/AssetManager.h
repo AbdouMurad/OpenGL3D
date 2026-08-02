@@ -37,9 +37,7 @@ class AssetManager {
 public:
     static AssetManager& Get();
 
-    // ======================
     // LOAD (from file)
-    // ======================
     ModelHandle LoadModel(const std::string& path);
     TextureHandle LoadTexture(const std::string& path, TextureType type);
     ShaderHandle LoadShader(const std::string& vertexFile, const std::string& fragmentFile);
@@ -48,18 +46,13 @@ public:
     MeshHandle CreateMesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices); //TODO: use && for moving large data -> look more into this
     MaterialHandle CreateMaterial(Material material);
 
-    // ======================
     // GET (fast lookup)
-    // ======================
     Model& GetModel(ModelHandle id);
     Mesh& GetMesh(MeshHandle id);
     Texture& GetTexture(TextureHandle id);
     Shader& GetShader(ShaderHandle id);
     Material& GetMaterial(MaterialHandle id);
 
-    // ======================
-    // CLEAR
-    // ======================
     void Clear();
 
     uint32_t nextID = 1;
@@ -69,7 +62,6 @@ private:
     template<typename T>
     using AssetMap = std::unordered_map<uint32_t, std::unique_ptr<T>>;
 
-
     AssetMap<Model> models;
     AssetMap<Mesh> meshes;
     AssetMap<Texture> textures;
@@ -77,4 +69,5 @@ private:
     AssetMap<Shader> shaders;
 
     std::unordered_map<std::string, ShaderHandle> shaderCache;
+    std::unordered_map<std::string, ModelHandle> modelCache;
 };

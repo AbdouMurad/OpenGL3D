@@ -29,10 +29,10 @@ public:
 
 	CameraComponent(int width, int height);
 
-	void setViewport(int width, int height);
-	void updateMatrix();
+	void SetViewport(int width, int height);
+	void UpdateMatrix();
 	
-	glm::vec3 getOrientation();
-	glm::vec3 getPosition();
+	glm::vec3 GetOrientation();
+	glm::vec3 GetPosition();
 
 };

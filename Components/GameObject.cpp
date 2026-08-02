@@ -1,22 +1,36 @@
 #include "GameObject.h"
 
-TransformComponent::TransformComponent(glm::vec3 Pos, glm::vec3 Size, glm::vec3 Rot)
-	:	position(Pos), size(Size), rotation(glm::quat(glm::radians(Rot))) {}
-TransformComponent::TransformComponent(glm::vec3 Pos)
-	: position(Pos) {}
+glm::mat4 Transform::GetMatrix() const {
+	glm::mat4 mat(1.0f);
+
+	mat = glm::translate(mat, position);
+	mat *= glm::mat4(rotation);
+	mat = glm::scale(mat, size);
+
+	return mat;
+}
+
+TransformComponent::TransformComponent(glm::vec3 Pos, glm::vec3 Size, glm::vec3 Rot) {
+	local.position = Pos;
+	local.size = Size;
+	local.rotation = Rot;
+}
+TransformComponent::TransformComponent(glm::vec3 Pos) {
+	local.position = Pos;
+}
 
 
-glm::vec3 TransformComponent::getWorldPosition() const {
-	glm::mat4 world = getWorldMatrix();
+glm::vec3 TransformComponent::GetPosition() const {
+	glm::mat4 world = GetMatrix();
 	return glm::vec3(world[3]);
 }
-glm::vec3 TransformComponent::getPosition() const {
-	return position;
+glm::vec3 TransformComponent::GetLocalPosition() const {
+	return local.position;
 }
 
 
-glm::vec3 TransformComponent::getWorldSize() const {
-	glm::mat4 world = getWorldMatrix();
+glm::vec3 TransformComponent::GetSize() const {
+	glm::mat4 world = GetMatrix();
 
 	return glm::vec3(
 		glm::length(glm::vec3(world[0])),
@@ -24,19 +38,19 @@ glm::vec3 TransformComponent::getWorldSize() const {
 		glm::length(glm::vec3(world[2]))
 	);
 }
-glm::vec3 TransformComponent::getSize() const {
-	return size;
+glm::vec3 TransformComponent::GetLocalSize() const {
+	return local.size;
 }
 
-glm::vec3 TransformComponent::getWorldRotation() const {
-	return glm::degrees(glm::eulerAngles(getWorldQuat()));
+glm::vec3 TransformComponent::GetRotation() const {
+	return glm::degrees(glm::eulerAngles(GetQuat()));
 }
-glm::vec3 TransformComponent::getRotation() const {
-	return glm::degrees(glm::eulerAngles(rotation));
+glm::vec3 TransformComponent::GetLocalRotation() const {
+	return glm::degrees(glm::eulerAngles(local.rotation));
 }
 
-glm::quat TransformComponent::getWorldQuat() const{
-	glm::mat4 world = getWorldMatrix();
+glm::quat TransformComponent::GetQuat() const{
+	glm::mat4 world = GetMatrix();
 	glm::vec3 scale = {
 		glm::length(glm::vec3(world[0])),
 		glm::length(glm::vec3(world[1])),
@@ -49,85 +63,67 @@ glm::quat TransformComponent::getWorldQuat() const{
 	);
 	return glm::quat_cast(rot);
 }
-glm::quat TransformComponent::getQuat() const {
-	return rotation;
+glm::quat TransformComponent::GetLocalQuat() const {
+	return local.rotation;
 }
 
-glm::mat4 TransformComponent::getLocalMatrix() const
+glm::mat4 TransformComponent::GetLocalMatrix() const
 {
-	glm::mat4 mat(1.0f);
-
-	mat = glm::translate(mat, position);
-	mat *= glm::mat4(rotation);
-	mat = glm::scale(mat, size);
-
-	return mat;
+	return local.GetMatrix();
 }
-glm::mat4 TransformComponent::getWorldMatrix() const
+glm::mat4 TransformComponent::GetMatrix() const
 {
-	glm::mat4 parentMatrix(1.0f);
-	if (parent)
-	{
-		glm::mat4 parentWorld = parent->getWorldMatrix();
-
-		if (!inheritScale)
-		{
-			parentWorld[0] = glm::normalize(parentWorld[0]);
-			parentWorld[1] = glm::normalize(parentWorld[1]);
-			parentWorld[2] = glm::normalize(parentWorld[2]);
-		}
-		parentMatrix = parentWorld;
-	}
-	return parentMatrix * getLocalMatrix();
+	glm::mat4 parentMatrix = parent ? parent->GetMatrix() : glm::mat4(1.0f);
+	return parentMatrix * GetLocalMatrix();
 }
 
-void TransformComponent::setPosition(glm::vec3 position) {
-	TransformComponent::position = position;
+void TransformComponent::SetPosition(const glm::vec3& position) {
+	local.position = position;
 }
-void TransformComponent::setSize(glm::vec3 size) {
-	TransformComponent::size = size;
-}
-
-void TransformComponent::setRotation(glm::vec3 rotation) {
-	TransformComponent::rotation = glm::quat(glm::radians(rotation));
-}
-void TransformComponent::setRotation(glm::quat rotation) {
-	TransformComponent::rotation = rotation;
+void TransformComponent::SetSize(const glm::vec3& size) {
+	local.size = size;
 }
 
-void TransformComponent::translate(glm::vec3 delta) {
-	position += delta;
+void TransformComponent::SetRotation(const glm::vec3& rotation) {
+	local.rotation = glm::quat(glm::radians(rotation));
 }
-void TransformComponent::rotate(glm::vec3 delta)
+void TransformComponent::SetRotation(const glm::quat& rotation) {
+	local.rotation = rotation;
+}
+
+void TransformComponent::Translate(const glm::vec3& delta) {
+	local.position += delta;
+}
+void TransformComponent::Rotate(const glm::vec3& delta)
 {
 	glm::quat deltaQuat =
 		glm::angleAxis(glm::radians(delta.x), glm::vec3(1, 0, 0)) *
 		glm::angleAxis(glm::radians(delta.y), glm::vec3(0, 1, 0)) *
 		glm::angleAxis(glm::radians(delta.z), glm::vec3(0, 0, 1));
 
-	rotation = glm::normalize(rotation * deltaQuat);
+	local.rotation = glm::normalize(local.rotation * deltaQuat);
 }
-void TransformComponent::scale(float scale) {
-	size *= scale;
+void TransformComponent::Scale(float scale) {
+	local.size *= scale;
 }
 
 glm::vec3 TransformComponent::Forward() const {
-	return glm::normalize(rotation * glm::vec3(0, 0, -1));
+	return glm::normalize(local.rotation * glm::vec3(0, 0, -1));
 }
 glm::vec3 TransformComponent::Right() const {
-	return glm::normalize(rotation * glm::vec3(1, 0, 0));
+	return glm::normalize(local.rotation * glm::vec3(1, 0, 0));
 }
 glm::vec3 TransformComponent::Up() const {
-	return glm::normalize(rotation * glm::vec3(0, 1, 0));
+	return glm::normalize(local.rotation * glm::vec3(0, 1, 0));
 }
 
 std::ostream& operator<<(std::ostream& os, const TransformComponent& transform) {
-	glm::vec3 EulerRotation = glm::degrees(glm::eulerAngles(transform.rotation));
-	glm::vec3 worldPos = transform.getWorldPosition();
+	glm::vec3 EulerRotation = glm::degrees(glm::eulerAngles(transform.local.rotation));
+	glm::vec3 worldPos = transform.GetPosition();
 	os << "TransformComponent: {\n";
-	os << "	Position: { x: " << transform.position.x << ", y: " << transform.position.y << ", z: " << transform.position.z << "}\n";
+	os << "	Position: { x: " << transform.local.position.x << ", y: " << transform.local.position.y << ", z: " << transform.local.position.z << "}\n";
 	os << "	Rotation: { x: " << EulerRotation.x << ", y: " << EulerRotation.y << ", z: " << EulerRotation.z << "}\n";
-	os << "	Size: { x: " << transform.size.x << ", y: " << transform.size.y << ", z: " << transform.size.z << "}\n";
+	os << "	Size: { x: " << transform.local.size.x << ", y: " << transform.local.size.y << ", z: " << transform.local.size.z << "}\n";
 	os << "	World Position: { x: " << worldPos.x << ", y: " << worldPos.y << ", z: " << worldPos.z << "}\n";
 	os << "}\n";
 	return os;

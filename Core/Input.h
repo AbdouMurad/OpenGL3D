@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "gl_core.h"
 #include <glm/glm.hpp>
