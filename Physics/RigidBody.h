@@ -32,7 +32,9 @@ public:
     void SetMass(float mass);
 
     bool IsStatic() const;
+    bool UseGravity() const;
     void ToggleStatic();
+    void ToggleGravity();
 
 private:
     friend class PhysicsWorld;
@@ -50,4 +52,5 @@ private:
     glm::vec3 pendingAngularImpulse = glm::vec3(0);
 
     bool isStatic = false;
+    bool useGravity = true;
 };

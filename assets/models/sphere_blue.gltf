@@ -23,6 +23,22 @@
 			]
 		}
 	],
+	"materials":[
+		{
+			"doubleSided":true,
+			"name":"Material.001",
+			"pbrMetallicRoughness":{
+				"baseColorFactor":[
+					0.016114037483930588,
+					0.10349030047655106,
+					0.8012214303016663,
+					1
+				],
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		}
+	],
 	"meshes":[
 		{
 			"name":"Sphere",
@@ -33,7 +49,8 @@
 						"NORMAL":1,
 						"TEXCOORD_0":2
 					},
-					"indices":3
+					"indices":3,
+					"material":0
 				}
 			]
 		}
@@ -103,7 +120,7 @@
 	"buffers":[
 		{
 			"byteLength":69248,
-			"uri":"sphere.bin"
+			"uri":"sphere_blue.bin"
 		}
 	]
 }

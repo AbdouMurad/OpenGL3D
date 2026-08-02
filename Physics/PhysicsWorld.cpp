@@ -1,7 +1,7 @@
 #include "PhysicsWorld.h"
 
 Collision::CollisionFn Collision::dispatchTable[ShapeCount][ShapeCount] = {};
-
+Collision::BroadCollisionFn Collision::broadDispatchTable[ShapeCount] = {};
 
 
 //register function pointers in dispatch table
@@ -15,6 +15,10 @@ void Collision::init() {
 	dispatchTable[(int)SHAPE::Capsule][(int)SHAPE::Sphere] = Collision::CapsuleSphere;
 	dispatchTable[(int)SHAPE::Sphere][(int)SHAPE::Capsule] = Collision::SphereCapsule;
 	dispatchTable[(int)SHAPE::Capsule][(int)SHAPE::Capsule] = Collision::CapsuleCapsule;*/
+
+	broadDispatchTable[(int)SHAPE::Box] = Collision::BoxShape;
+	broadDispatchTable[(int)SHAPE::Sphere] = Collision::SphereShape;
+	//broadDispatchTable[(int)SHAPE::Capsule] = Collision::CapsuleShape;
 }
 
 bool Collision::SphereSphere(ColliderComponent& a, ColliderComponent& b, Result& r) {
@@ -105,6 +109,34 @@ static float ProjectRadius(Collision::OBB& obb, glm::vec3 axis) {
 		obb.halfExtent.z * abs(glm::dot(axis, glm::normalize(obb.forward)));
 }
 
+AABB Collision::SphereShape(ColliderComponent& c) {
+	glm::vec3 pos = c.GetMatrix()[3];
+	AABB box;
+	float radius = ((Sphere*)c.shape.get())->radius;
+	box.min = pos - radius;
+	box.max = pos + radius;
+	return box;
+}
+AABB Collision::BoxShape(ColliderComponent& c) {
+	glm::mat4 mat = c.GetMatrix();
+	glm::vec3 halfExtents = ((Box*)c.shape.get())->halfExtent;
+	
+	glm::vec3 right = glm::normalize(glm::vec3(mat[0]));
+	glm::vec3 up = glm::normalize(glm::vec3(mat[1]));
+	glm::vec3 forward = glm::normalize(glm::vec3(mat[2]));
+
+	glm::vec3 aabbHalf;
+	aabbHalf.x = abs(right.x) * halfExtents.x + abs(up.x) * halfExtents.y + abs(forward.x) * halfExtents.z;
+	aabbHalf.y = abs(right.y) * halfExtents.x + abs(up.y) * halfExtents.y + abs(forward.y) * halfExtents.z;
+	aabbHalf.z = abs(right.z) * halfExtents.x + abs(up.z) * halfExtents.y + abs(forward.z) * halfExtents.z;
+
+	AABB a;
+	a.min = glm::vec3(mat[3]) - aabbHalf;
+	a.max = glm::vec3(mat[3]) + aabbHalf;
+
+	return a;
+}
+
 //SHOULD CREATE OBB struct to store axis of box instead of normalizing every time -> EXPENSIVE!
 bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& result) {
 	Box* shapeA = static_cast<Box*>(a.shape.get());
@@ -167,27 +199,43 @@ bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& resul
 		result.normal = -bestAxis;
 	result.penetration = minOverlap;
 	result.point = (boxA.center + boxB.center) * 0.5f; // NEEDS TO BE  IMPROVED -> implement clipping
-	std::cout << "COLLISION" << std::endl;
 	return true;
 }
-
-bool Collision::Test(ColliderComponent& a, ColliderComponent& b, Result& result) {
-
-	SHAPE aShape = a.shape->GetType();
-	SHAPE bShape = b.shape->GetType();
-	
+bool Collision::AABBTest(const AABB& a, const AABB& b) {
+	bool overlapX = (a.min.x <= b.max.x) && (a.max.x >= b.min.x);
+	bool overlapY = (a.min.y <= b.max.y) && (a.max.y >= b.min.y);
+	bool overlapZ = (a.min.z <= b.max.z) && (a.max.z >= b.min.z);
+	return overlapX && overlapY && overlapZ;
+}
+bool Collision::Test(ColliderComponent& a, ColliderComponent& b, Result& result) {	
 	auto fn = dispatchTable[(int)a.shape->GetType()][(int)b.shape->GetType()];
 	if (fn) {
 		return fn(a, b, result);
 	}
 	return false;
-
 } 
+void PhysicsWorld::BuildBroad() {
+	for (auto collider : colliders) {
+		collider->aabb = Collision::broadDispatchTable[(int)collider->shape->GetType()](*collider);
+	}
+}
+
+void PhysicsWorld::BroadPhase() {
+	broadPhase.clear();
+	for (int i = 0; i < colliders.size(); ++i) {
+		for (int j = i + 1; j < colliders.size(); ++j) {
+			if (Collision::AABBTest(colliders[i]->aabb, colliders[j]->aabb)) {
+				broadPhase.push_back(Pair(colliders[i], colliders[j]));
+			}
+		}
+	}
+}
 
 void PhysicsWorld::Step(float dt) {
 	for (RigidBodyComponent* body : bodies) {
 		if (body->isStatic) continue;
-		body->AddForce(gravity * body->mass);
+		if (body->useGravity)
+			body->AddForce(gravity * body->mass);
 		
 		Integrate(body, dt);
 
@@ -196,6 +244,8 @@ void PhysicsWorld::Step(float dt) {
 		body->pendingImpulse = glm::vec3(0);
 		body->pendingAngularImpulse = glm::vec3(0);
 	}
+	BuildBroad();
+	BroadPhase();
 	CollisionCheck();
 
 
@@ -203,7 +253,6 @@ void PhysicsWorld::Step(float dt) {
 void PhysicsWorld::ResolveCollision(RigidBodyComponent* ra , RigidBodyComponent* rb, Result& result) {
 	float inverseMassA = (ra && !ra->IsStatic()) ? ra->GetInverseMass() : 0.0f;
 	float inverseMassB = (rb && !rb->IsStatic()) ? rb->GetInverseMass() : 0.0f;
-	std::cout << "PENETRATION: " << result.penetration << " " << result.normal.y << std::endl;
 	float totalMass = inverseMassA + inverseMassB;
 	if (totalMass == 0) return; //both static
 	float percent = 0.8f;
@@ -245,15 +294,10 @@ void PhysicsWorld::HandleCollision(Result& result) {
 }
 
 void PhysicsWorld::CollisionCheck() {
-	//TODO: optimization on who to compare to who
-	for (int i = 0; i < colliders.size(); ++i) {
-		for (int j = i + 1; j < colliders.size(); ++j) {
-			if (i == j) continue;
-			Result result;
-			if (!Collision::Test(*colliders[i], *colliders[j], result)) continue;
-			HandleCollision(result);
-			//Handle collision
-		}
+	for (Pair& pair : broadPhase) {
+		Result result;
+		if (!Collision::Test(*pair.a, *pair.b, result)) continue;
+		HandleCollision(result);
 	}
 }
 

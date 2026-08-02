@@ -6,6 +6,7 @@ GameObject& Scene::CreateObject() {
 	GameObject* ptr = object.get();
 	ptr->AddComponent<TransformComponent>();
 	objects.push_back(std::move(object));
+	dirtyScene = true;
 	return *ptr;
 }
 
@@ -18,14 +19,18 @@ CameraComponent* Scene::GetMainCamera() {
 }
 
 void Scene::Start() {
+	physics.colliders.clear();
+	physics.bodies.clear();
 	for (std::unique_ptr<GameObject>& object : objects) {
 		RigidBodyComponent* rb = object->GetComponent<RigidBodyComponent>();
 		ColliderComponent* c = object->GetComponent<ColliderComponent>();
 		if (c) physics.colliders.push_back(c);
 		if (rb) physics.bodies.push_back(rb);
 	}
+	dirtyScene = false;
 }
 void Scene::Update(float dt) {
+	if (dirtyScene) Start();
 	for (std::unique_ptr<GameObject>& object : objects) {
 		object->Update(dt);
 	}

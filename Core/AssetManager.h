@@ -69,4 +69,5 @@ private:
     AssetMap<Shader> shaders;
 
     std::unordered_map<std::string, ShaderHandle> shaderCache;
+    std::unordered_map<std::string, ModelHandle> modelCache;
 };

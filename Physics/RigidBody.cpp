@@ -13,7 +13,6 @@ void RigidBodyComponent::AddTorque(const glm::vec3& torque) {
 	accumulatedTorque += torque;
 }
 void RigidBodyComponent::Move(const glm::vec3& delta) {
-	std::cout << "MOVING: " << delta.y << std::endl;
 	owner->GetComponent<TransformComponent>()->Translate(delta);
 }
 
@@ -48,7 +47,13 @@ void RigidBodyComponent::SetMass(float m) {
 bool RigidBodyComponent::IsStatic() const {
 	return isStatic;
 }
+bool RigidBodyComponent::UseGravity() const {
+	return useGravity;
+}
 void RigidBodyComponent::ToggleStatic() {
 	isStatic = !isStatic;
+}
+void RigidBodyComponent::ToggleGravity() {
+	useGravity = !useGravity;
 }
 

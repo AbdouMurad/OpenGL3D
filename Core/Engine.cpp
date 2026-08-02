@@ -26,6 +26,7 @@ void Application::Run(Game& game) {
 	while (!window.ShouldClose()) {
 		Time::Update();
 		float dt = Time::DeltaTime();
+		// std::cout << "FPS: " << 1.0f / dt << "\n";
 		
 		Input::Update();
 		window.PollEvents();	
