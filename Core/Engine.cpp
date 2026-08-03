@@ -14,6 +14,15 @@ void Application::Run(Game& game) {
 	gladLoadGL();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_FRAMEBUFFER_SRGB);
+
+	//Face Culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
+
+	//turns off vsync -> only use to test fps
+	glfwSwapInterval(0);
+
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
 	glViewport(0, 0, width, height);
