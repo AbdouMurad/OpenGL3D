@@ -24,7 +24,7 @@ ShaderHandle ShaderManager::GetMaterialShader(uint32_t flags)
     // For now: one universal PBR shader
     shader = AssetManager::Get().LoadShader(
         "assets/shaders/pbr.vert",
-        "assets/shaders/pbr.frag"
+        "assets/shaders/pbr2.frag"
     );
 
 

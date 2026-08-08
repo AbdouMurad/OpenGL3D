@@ -98,6 +98,7 @@ vec3 getNormal() {
 
 
 void main() {
+	//setup
 	vec4 albedo = u_baseColor;
 	if (u_hasBaseColorTex) {
 		albedo *= texture(u_baseColorTex, TexCoord);

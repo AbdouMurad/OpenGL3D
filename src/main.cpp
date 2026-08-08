@@ -119,7 +119,7 @@ public:
         camera.AddComponent<CameraComponent>(width, height);
         camera.GetComponent<CameraComponent>()->SetViewport(width, height);
         camera.AddComponent<PlayerController>();
-        camera.AddComponent<PointLightComponent>(glm::vec3(1.0f, 1.0f, 1.0f), 15.0f, 100.0f);
+        camera.AddComponent<PointLightComponent>(glm::vec3(1.0f, 1.0f, 1.0f), 75.0f, 650.0f);
         camera.GetComponent<TransformComponent>()->SetPosition({ 0,1,20 });
 
         scene.SetMainCamera(camera);
