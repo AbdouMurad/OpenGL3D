@@ -16,15 +16,37 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"body"
+			"name":"body",
+			"rotation":[
+				0,
+				-1,
+				0,
+				4.371138828673793e-08
+			],
+			"scale":[
+				0.5,
+				0.5,
+				0.5
+			]
 		},
 		{
 			"mesh":1,
 			"name":"beak",
+			"rotation":[
+				0,
+				-1,
+				0,
+				4.371138828673793e-08
+			],
+			"scale":[
+				0.5,
+				0.5,
+				0.5
+			],
 			"translation":[
 				0,
 				0.2217014580965042,
-				-0.020003139972686768
+				-0.020003000274300575
 			]
 		}
 	],
@@ -32,7 +54,16 @@
 		{
 			"doubleSided":true,
 			"name":"Material.002",
-			"pbrMetallicRoughness":{}
+			"pbrMetallicRoughness":{
+				"baseColorFactor":[
+					0.032999999821186066,
+					0.032999999821186066,
+					0.032999999821186066,
+					1
+				],
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
 		},
 		{
 			"doubleSided":true,
@@ -51,7 +82,16 @@
 		{
 			"doubleSided":true,
 			"name":"Material.005",
-			"pbrMetallicRoughness":{}
+			"pbrMetallicRoughness":{
+				"baseColorFactor":[
+					0.057999998331069946,
+					0.057999998331069946,
+					0.057999998331069946,
+					1
+				],
+				"metallicFactor":0,
+				"roughnessFactor":0.18503938615322113
+			}
 		},
 		{
 			"doubleSided":true,

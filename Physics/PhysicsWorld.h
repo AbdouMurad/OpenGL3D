@@ -3,6 +3,8 @@
 #include "RigidBody.h"
 #include "Collider.h"
 
+#include "Events/EventBus.h"
+#include <unordered_set>
 
 struct Result {
 	ColliderComponent* a = nullptr;
@@ -57,6 +59,21 @@ namespace Collision {
 struct Pair {
 	ColliderComponent* a;
 	ColliderComponent* b;
+
+	bool operator==(const Pair& other) const
+	{
+		return (a == other.a && b == other.b) || (a == other.b && b == other.a);
+	}
+	
+
+};
+struct PairHash {
+	//used to hash pair -> for set
+	size_t operator()(const Pair& pair) const {
+		auto a = std::hash<const ColliderComponent*>{}(pair.a);
+		auto b = std::hash<const ColliderComponent*>{}(pair.b);
+		return a ^ b;
+	}
 };
 
 
@@ -67,8 +84,17 @@ class PhysicsWorld {
 	void CollisionCheck();
 	void HandleCollision(Result& result);
 	void ResolveCollision(RigidBodyComponent*, RigidBodyComponent*, Result& result);
+	void UpdateTrigger();
 	
+	EventBus& eventBus;
 public:
+	PhysicsWorld(EventBus&);
+
+	//change to 2 buffers later and instead of copying one to the other just change which is which
+	std::unordered_set<Pair, PairHash> triggerBuffer1;
+	std::unordered_set<Pair, PairHash> triggerBuffer2;
+	bool triggerBufferSwitch = false; //false -> buffer 1 = current, buffer 2 = previous. true -> opposite;
+
 	std::vector<Pair> broadPhase;
 	std::vector<RigidBodyComponent*> bodies;
 	std::vector<ColliderComponent*> colliders;

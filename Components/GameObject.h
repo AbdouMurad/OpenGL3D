@@ -21,6 +21,9 @@ public:
 	void SetOwner(GameObject* obj) {
 		owner = obj;
 	}
+	GameObject* getOwner() const {
+		return owner;
+	};
 
 	virtual void Start() {}
 	virtual void Update(float dt) {}
@@ -101,7 +104,6 @@ public:
 
 		return ptr;
 	}
-
 	template<typename T>
 	T* GetComponent() {
 		for (auto& component : components) {
@@ -109,6 +111,16 @@ public:
 				return cast;
 		}
 		return nullptr;
+	} 
+
+	template<typename T>
+	std::vector<T*> GetComponents() {
+		std::vector<T*> result;
+		for (auto& component : components) {
+			if (auto cast = dynamic_cast<T*>(component.get()))
+				result.push_back(cast);
+		}
+		return result;
 	}
 
 	void Update(float dt) {

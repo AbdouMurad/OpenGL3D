@@ -22,10 +22,12 @@ void Scene::Start() {
 	physics.colliders.clear();
 	physics.bodies.clear();
 	for (std::unique_ptr<GameObject>& object : objects) {
-		RigidBodyComponent* rb = object->GetComponent<RigidBodyComponent>();
-		ColliderComponent* c = object->GetComponent<ColliderComponent>();
-		if (c) physics.colliders.push_back(c);
-		if (rb) physics.bodies.push_back(rb);
+		for (RigidBodyComponent* rb : object->GetComponents<RigidBodyComponent>()) {
+			physics.bodies.push_back(rb);
+		}
+		for (ColliderComponent* c : object->GetComponents<ColliderComponent>()) {
+			physics.colliders.push_back(c);
+		}
 	}
 	dirtyScene = false;
 }

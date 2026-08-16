@@ -19,7 +19,7 @@ void Time::Update() {
 	if (fpsTimer >= 0.5f) {
 		fps = frameCount / fpsTimer;
 		frameTimeMs = (fpsTimer * 1000.0f) / frameCount;
-		std::cout << fps << " FPS\n";
+		//std::cout << fps << " FPS\n";
 		frameCount = 0;
 		fpsTimer = 0.0f;
 	}

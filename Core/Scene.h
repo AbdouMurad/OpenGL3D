@@ -16,10 +16,11 @@ class RenderFrame;
 class Scene {
 	std::vector<std::unique_ptr<GameObject>> objects;
 	GameObject* mainCamera = nullptr;
-	PhysicsWorld physics;
+	PhysicsWorld physics = PhysicsWorld(eventBus);
 
 	bool dirtyScene = false;
 public:
+	EventBus eventBus;
 	GameObject& CreateObject();
 
 	void SetMainCamera(GameObject& camera);

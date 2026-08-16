@@ -25,7 +25,7 @@ struct Box : public ColliderShape {
 	Box() = default;
 	Box(const glm::vec3& halfSize);
 
-	glm::vec3 halfExtent = glm::vec3(1);
+	glm::vec3 halfExtent = glm::vec3(0.5);
 
 	SHAPE GetType() const override;
 };
