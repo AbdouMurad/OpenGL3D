@@ -91,8 +91,9 @@ public:
 	PhysicsWorld(EventBus&);
 
 	//change to 2 buffers later and instead of copying one to the other just change which is which
-	std::unordered_set<Pair, PairHash> previousTrigger;
-	std::unordered_set<Pair, PairHash> currentTrigger;
+	std::unordered_set<Pair, PairHash> triggerBuffer1;
+	std::unordered_set<Pair, PairHash> triggerBuffer2;
+	bool triggerBufferSwitch = false; //false -> buffer 1 = current, buffer 2 = previous. true -> opposite;
 
 	std::vector<Pair> broadPhase;
 	std::vector<RigidBodyComponent*> bodies;

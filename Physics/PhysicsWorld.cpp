@@ -249,7 +249,9 @@ void PhysicsWorld::Step(float dt) {
 		body->pendingImpulse = glm::vec3(0);
 		body->pendingAngularImpulse = glm::vec3(0);
 	}
-	currentTrigger.clear();
+	if (triggerBufferSwitch) triggerBuffer2.clear();
+	else triggerBuffer1.clear();
+
 	BuildBroad();
 	BroadPhase();
 	CollisionCheck();
@@ -290,8 +292,10 @@ void PhysicsWorld::ResolveCollision(RigidBodyComponent* ra , RigidBodyComponent*
 	
 }
 void PhysicsWorld::UpdateTrigger() {
-	for (auto& pair : currentTrigger) {
-		if (previousTrigger.contains(pair))
+	std::unordered_set<Pair, PairHash>* currentTrigger = triggerBufferSwitch ? &triggerBuffer2 : &triggerBuffer1;
+	std::unordered_set<Pair, PairHash>* previousTrigger = triggerBufferSwitch ? &triggerBuffer1 : &triggerBuffer2;
+	for (auto& pair : *currentTrigger) {
+		if (previousTrigger->contains(pair))
 			//stay
 			continue;
 		else {
@@ -304,8 +308,8 @@ void PhysicsWorld::UpdateTrigger() {
 		}
 	}
 
-	for (auto& pair : previousTrigger) {
-		if (!currentTrigger.contains(pair)) {
+	for (auto& pair : *previousTrigger) {
+		if (!currentTrigger->contains(pair)) {
 			//leave
 			TriggerExitEvent event;
 			event.trigger = pair.a->isTrigger ? pair.a : pair.b;
@@ -313,8 +317,7 @@ void PhysicsWorld::UpdateTrigger() {
 			eventBus.Emit(event);
 		}
 	}
-
-	previousTrigger = std::move(currentTrigger);
+	triggerBufferSwitch = !triggerBufferSwitch;
 }
 void PhysicsWorld::HandleCollision(Result& result) {
 	if (result.a->isTrigger || result.b->isTrigger) {
@@ -336,7 +339,8 @@ void PhysicsWorld::CollisionCheck() {
 		Result result;
 		if (!Collision::Test(*pair.a, *pair.b, result)) continue;
 		if (pair.a->isTrigger || pair.b->isTrigger) {
-			currentTrigger.insert(pair);
+			if (triggerBufferSwitch) triggerBuffer2.insert(pair);
+			else triggerBuffer1.insert(pair);
 			continue;
 		}
 		HandleCollision(result);
