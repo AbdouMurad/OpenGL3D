@@ -34,7 +34,7 @@ static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::fil
 	const json& gltfMaterial = data.materials[index];
 
 	Material material;
-
+	std::cout << "MATERIALS: \n" << gltfMaterial << std::endl;
 	if (gltfMaterial.contains("pbrMetallicRoughness")) {
 		const json& pbr = gltfMaterial["pbrMetallicRoughness"];
 
@@ -49,8 +49,8 @@ static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::fil
 		if (pbr.contains("roughnessFactor")) {
 			material.properties.roughness = pbr["roughnessFactor"];
 		}
-		if (pbr.contains("mettalicRoughnessTexture")) {
-			int textureIndex = pbr["mettalicRoughnessTexture"]["index"];
+		if (pbr.contains("metallicRoughnessTexture")) {
+			int textureIndex = pbr["metallicRoughnessTexture"]["index"];
 
 			const json& texture = data.textures[textureIndex];
 

@@ -1,5 +1,8 @@
 #include "PhysicsWorld.h"
 
+PhysicsWorld::PhysicsWorld(EventBus& eb)
+	: eventBus(eb) {}
+
 Collision::CollisionFn Collision::dispatchTable[ShapeCount][ShapeCount] = {};
 Collision::BroadCollisionFn Collision::broadDispatchTable[ShapeCount] = {};
 
@@ -224,8 +227,11 @@ void PhysicsWorld::BroadPhase() {
 	broadPhase.clear();
 	for (int i = 0; i < colliders.size(); ++i) {
 		for (int j = i + 1; j < colliders.size(); ++j) {
-			if (Collision::AABBTest(colliders[i]->aabb, colliders[j]->aabb)) {
-				broadPhase.push_back(Pair(colliders[i], colliders[j]));
+			ColliderComponent* a = colliders[i];
+			ColliderComponent* b = colliders[j];
+			if (a->getOwner() == b->getOwner()) continue;
+			if (Collision::AABBTest(a->aabb, b->aabb)) {
+				broadPhase.push_back(Pair(a, b));
 			}
 		}
 	}
@@ -239,16 +245,15 @@ void PhysicsWorld::Step(float dt) {
 		
 		Integrate(body, dt);
 
-
 		body->accumulatedForce = glm::vec3(0);
 		body->pendingImpulse = glm::vec3(0);
 		body->pendingAngularImpulse = glm::vec3(0);
 	}
+	currentTrigger.clear();
 	BuildBroad();
 	BroadPhase();
 	CollisionCheck();
-
-
+	UpdateTrigger();
 }
 void PhysicsWorld::ResolveCollision(RigidBodyComponent* ra , RigidBodyComponent* rb, Result& result) {
 	float inverseMassA = (ra && !ra->IsStatic()) ? ra->GetInverseMass() : 0.0f;
@@ -273,7 +278,7 @@ void PhysicsWorld::ResolveCollision(RigidBodyComponent* ra , RigidBodyComponent*
 	float velocityNormal = glm::dot(result.normal, relativeVelocity);
 
 	if (velocityNormal > 0) return;
-	float restitution = 0.5f; //should be a property on collider or rb
+	float restitution = 0.0f; //should be a property on collider or rb
 	float j = -(1 + restitution) * velocityNormal;
 	j /= inverseMassA + inverseMassB;
 
@@ -284,8 +289,41 @@ void PhysicsWorld::ResolveCollision(RigidBodyComponent* ra , RigidBodyComponent*
 		rb->AddImpulse(impulse);
 	
 }
+void PhysicsWorld::UpdateTrigger() {
+	for (auto& pair : currentTrigger) {
+		if (previousTrigger.contains(pair))
+			//stay
+			continue;
+		else {
+			//TODO: helper function for emits
+			//enter
+			TriggerEnterEvent event;
+			event.trigger = pair.a->isTrigger ? pair.a : pair.b;
+			event.other = pair.a->isTrigger ? pair.b : pair.a;
+			eventBus.Emit(event);
+		}
+	}
 
+	for (auto& pair : previousTrigger) {
+		if (!currentTrigger.contains(pair)) {
+			//leave
+			TriggerExitEvent event;
+			event.trigger = pair.a->isTrigger ? pair.a : pair.b;
+			event.other = pair.a->isTrigger ? pair.b : pair.a;
+			eventBus.Emit(event);
+		}
+	}
+
+	previousTrigger = std::move(currentTrigger);
+}
 void PhysicsWorld::HandleCollision(Result& result) {
+	if (result.a->isTrigger || result.b->isTrigger) {
+		TriggerEnterEvent event;
+		event.trigger = result.a->isTrigger ? result.a : result.b;
+		event.other = result.a->isTrigger ? result.b : result.a;
+		eventBus.Emit(event);
+		return;
+	}
 	RigidBodyComponent* ra = result.a->GetRigidBody();
 	RigidBodyComponent* rb = result.b->GetRigidBody();
 	if (ra == nullptr && rb == nullptr) return; //static vs static
@@ -297,6 +335,10 @@ void PhysicsWorld::CollisionCheck() {
 	for (Pair& pair : broadPhase) {
 		Result result;
 		if (!Collision::Test(*pair.a, *pair.b, result)) continue;
+		if (pair.a->isTrigger || pair.b->isTrigger) {
+			currentTrigger.insert(pair);
+			continue;
+		}
 		HandleCollision(result);
 	}
 }
