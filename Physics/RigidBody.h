@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Components/GameObject.h"
+#include "Components/GameObject.h" 
+#include "Shape.h"
 
 class RigidBodyComponent : public Component
 {
@@ -20,7 +21,7 @@ public:
     void Move(const glm::vec3& delta);
 
     // State access
-    const glm::vec3& GetVelocity() const;
+    const glm::vec3& GetVelocity() const; //const before -> return value : const after -> function itself
     const glm::vec3& GetAngularVelocity() const;
 
     void SetVelocity(const glm::vec3& velocity);
@@ -28,6 +29,13 @@ public:
 
     float GetMass() const;
     float GetInverseMass() const;
+
+    void SetLocalInertiaTensor(const Box* box);
+    void SetLocalInertiaTensor(const Sphere* sphere);
+    //void SetLocalInertiaTensor(const Capsule& capsule);
+
+    const glm::mat3& GetLocalInertiaTensor() const;
+    const glm::mat3& GetInverseLocalInertiaTensor() const;
 
     void SetMass(float mass);
 
@@ -41,6 +49,9 @@ private:
 
     float mass = 1.0f;
     float inverseMass = 1.0f;
+
+    glm::mat3 localInertiaTensor = glm::mat3(0);
+    glm::mat3 inverseLocalInertiaTensor = glm::mat3(0);
 
     glm::vec3 velocity = glm::vec3(0);
     glm::vec3 angularVelocity = glm::vec3(0);

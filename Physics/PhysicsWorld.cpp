@@ -246,6 +246,8 @@ void PhysicsWorld::Step(float dt) {
 		Integrate(body, dt);
 
 		body->accumulatedForce = glm::vec3(0);
+		body->accumulatedTorque = glm::vec3(0);
+
 		body->pendingImpulse = glm::vec3(0);
 		body->pendingAngularImpulse = glm::vec3(0);
 	}
@@ -348,8 +350,27 @@ void PhysicsWorld::CollisionCheck() {
 }
 
 void PhysicsWorld::Integrate(RigidBodyComponent* body, float dt) {
+	TransformComponent* transform = body->owner->GetComponent<TransformComponent>();
+	//linear
 	glm::vec3 acceleration = body->accumulatedForce * body->inverseMass;
 	body->velocity += acceleration * dt;
 	body->velocity += body->pendingImpulse * body->inverseMass;
-	body->owner->GetComponent<TransformComponent>()->Translate(body->velocity * dt);
+	transform->Translate(body->velocity * dt);
+
+	//angular
+	glm::mat3 R = glm::mat3_cast(transform->GetQuat());
+	glm::mat3 inverseInertiaWorld = R * body->GetInverseLocalInertiaTensor() * glm::transpose(R);
+
+	glm::vec3 angularAcceleration = inverseInertiaWorld * body->accumulatedTorque;
+	body->angularVelocity += angularAcceleration * dt;
+	body->angularVelocity += body->pendingAngularImpulse * inverseInertiaWorld;
+	float angularSpeed = glm::length(body->angularVelocity);
+	if (angularSpeed > 0) {
+		glm::vec3 axis = body->angularVelocity / angularSpeed;
+		float angle = angularSpeed * dt;
+
+		glm::quat deltaRotation = glm::angleAxis(angle, axis);
+		transform->Rotate(deltaRotation);
+
+	}
 }

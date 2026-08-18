@@ -80,8 +80,11 @@ public:
         triggerShape->halfExtent = glm::vec3(0.25f, 0.125, 0.25f);
 
         GameObject& box1 = scene.CreateObject();
-        box1.AddComponent<RigidBodyComponent>()->SetMass(10.0f);
-        box1.AddComponent<ColliderComponent>(SHAPE::Box);
+        RigidBodyComponent* rb1 = box1.AddComponent<RigidBodyComponent>();
+        rb1->SetMass(10.0f);
+        ColliderComponent* c1 = box1.AddComponent<ColliderComponent>(SHAPE::Box);
+        rb1->SetAngularVelocity({ 0,2,0 });
+        rb1->SetLocalInertiaTensor(static_cast<Box*>(c1->shape.get()));
         box1.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/cube.gltf"));
         box1.GetComponent<TransformComponent>()->SetPosition({ 5,0,0 });
         GameObject& box2 = scene.CreateObject();
@@ -114,6 +117,7 @@ public:
 
             TransformComponent* transform = player->GetComponent<TransformComponent>();
             rb->AddImpulse(transform->Forward() * 25.0f);
+            rb->ToggleGravity();
             ball.GetComponent<TransformComponent>()->SetPosition(transform->GetPosition() + transform->Forward());
             ball.GetComponent<TransformComponent>()->SetSize({ 0.3f,0.3f,0.3f });
         }

@@ -94,14 +94,16 @@ void TransformComponent::SetRotation(const glm::quat& rotation) {
 void TransformComponent::Translate(const glm::vec3& delta) {
 	local.position += delta;
 }
-void TransformComponent::Rotate(const glm::vec3& delta)
-{
+void TransformComponent::Rotate(const glm::vec3& delta) {
 	glm::quat deltaQuat =
 		glm::angleAxis(glm::radians(delta.x), glm::vec3(1, 0, 0)) *
 		glm::angleAxis(glm::radians(delta.y), glm::vec3(0, 1, 0)) *
 		glm::angleAxis(glm::radians(delta.z), glm::vec3(0, 0, 1));
 
 	local.rotation = glm::normalize(local.rotation * deltaQuat);
+}
+void TransformComponent::Rotate(const glm::quat& delta) {
+	local.rotation = glm::normalize(local.rotation * delta);
 }
 void TransformComponent::Scale(float scale) {
 	local.size *= scale;
