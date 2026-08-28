@@ -20,6 +20,19 @@ ColliderComponent::ColliderComponent(SHAPE s) {
 		shape = std::make_unique<Capsule>();
 		break;
 	}
-		
-
+}
+void ColliderComponent::Start() {
+	SHAPE s = shape->GetType();
+	RigidBodyComponent* rb = GetRigidBody();
+	switch (s) {
+	case (SHAPE::Box):
+		if (rb) rb->SetLocalInertiaTensor(static_cast<Box*>(shape.get()));
+		break;
+	case (SHAPE::Sphere):
+		if (rb) rb->SetLocalInertiaTensor(static_cast<Sphere*>(shape.get()));
+		break;
+	case (SHAPE::Capsule):
+		//if (rb) rb->SetLocalInertiaTensor(static_cast<Capsule*>(shape.get()));
+		break;
+	}
 }

@@ -6,6 +6,10 @@
 #include "Events/EventBus.h"
 #include <unordered_set>
 
+inline void Print(const glm::vec3& vector) {
+	std::cout << vector.x << ' ' << vector.y << ' ' << vector.z << '\n';
+}
+
 struct Result {
 	ColliderComponent* a = nullptr;
 	ColliderComponent* b = nullptr;
@@ -35,6 +39,12 @@ namespace Collision {
 	extern CollisionFn dispatchTable[ShapeCount][ShapeCount];
 
 	void init();
+
+	void ClosestPointsBetweenEdges(const glm::vec3& p1, const glm::vec3& q1, const glm::vec3& p2, const glm::vec3& q2, glm::vec3& c1, glm::vec3& c2);
+	glm::vec3 FurthestPoint(const OBB& box, const glm::vec3& direction);
+	std::vector<glm::vec3> ClipPolygon(const std::vector<glm::vec3>& polygon, const glm::vec3& planeNormal, float planeDistance);
+	std::vector<glm::vec3> GetFaceVertices(const OBB& box, const glm::vec3& normal);
+	std::vector<glm::vec3> GenerateManifold(const OBB& box1, const OBB& box2, const glm::vec3& normal, int bestAxisIndex);
 
 	AABB BoxShape(ColliderComponent&);
 	AABB SphereShape(ColliderComponent&);

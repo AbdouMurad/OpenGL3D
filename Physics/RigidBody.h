@@ -3,6 +3,25 @@
 #include "Components/GameObject.h" 
 #include "Shape.h"
 
+enum class RigidBodyConstraints : uint8_t {
+    None = 0,
+    FreezeX = 1,
+    FreezeY = 1 << 1,
+    FreezeZ = 1 << 2,
+
+    FreezeRotation = FreezeX | FreezeY | FreezeZ
+
+};
+inline RigidBodyConstraints operator|(
+    RigidBodyConstraints a,
+    RigidBodyConstraints b)
+{
+    return static_cast<RigidBodyConstraints>(
+        static_cast<uint8_t>(a) |
+        static_cast<uint8_t>(b)
+    );
+}
+
 class RigidBodyComponent : public Component
 {
 public:
@@ -24,6 +43,8 @@ public:
     const glm::vec3& GetVelocity() const; //const before -> return value : const after -> function itself
     const glm::vec3& GetAngularVelocity() const;
 
+    const glm::vec3 GetCenterMass() const;
+
     void SetVelocity(const glm::vec3& velocity);
     void SetAngularVelocity(const glm::vec3& velocity);
 
@@ -44,8 +65,14 @@ public:
     void ToggleStatic();
     void ToggleGravity();
 
+    void ApplyConstraint();
+    void SetConstraint(RigidBodyConstraints c);
+    bool IsRotationLocked(int i);
+
 private:
     friend class PhysicsWorld;
+
+    RigidBodyConstraints constraints = RigidBodyConstraints::None;
 
     float mass = 1.0f;
     float inverseMass = 1.0f;
