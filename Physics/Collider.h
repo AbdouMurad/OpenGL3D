@@ -22,5 +22,7 @@ public:
 
 	bool isTrigger = false;
 
+	void Start() override;
+
 	RigidBodyComponent* GetRigidBody();
 };

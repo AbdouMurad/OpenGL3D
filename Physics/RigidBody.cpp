@@ -28,6 +28,9 @@ const glm::vec3& RigidBodyComponent::GetVelocity() const {
 const glm::vec3& RigidBodyComponent::GetAngularVelocity() const {
 	return angularVelocity;
 }
+const glm::vec3 RigidBodyComponent::GetCenterMass() const {
+	return owner->GetComponent<TransformComponent>()->GetPosition();
+}
 void RigidBodyComponent::SetVelocity(const glm::vec3& velocity) {
 	RigidBodyComponent::velocity = velocity;
 }
@@ -57,3 +60,45 @@ void RigidBodyComponent::ToggleGravity() {
 	useGravity = !useGravity;
 }
 
+void RigidBodyComponent::SetLocalInertiaTensor(const Box* box) {
+	localInertiaTensor = glm::mat3(0);
+	glm::vec3 dimensions = box->halfExtent * 2.0f;
+	localInertiaTensor[0][0] = mass * (dimensions.y * dimensions.y + dimensions.z * dimensions.z) / 12.0f; //Ix
+	localInertiaTensor[1][1] = mass * (dimensions.x * dimensions.x + dimensions.z * dimensions.z) / 12.0f; //Iy
+	localInertiaTensor[2][2] = mass * (dimensions.x * dimensions.x + dimensions.y * dimensions.y) / 12.0f; //Iz
+
+	inverseLocalInertiaTensor = glm::mat3(0);
+	inverseLocalInertiaTensor[0][0] = 1.0f / localInertiaTensor[0][0];
+	inverseLocalInertiaTensor[1][1] = 1.0f / localInertiaTensor[1][1];
+	inverseLocalInertiaTensor[2][2] = 1.0f / localInertiaTensor[2][2];
+}
+void RigidBodyComponent::SetLocalInertiaTensor(const Sphere* sphere) {
+	localInertiaTensor = glm::mat3(0);
+	float inertia = mass * sphere->radius * sphere->radius * 2.0f / 3.0f;
+	localInertiaTensor[0][0] = inertia;
+	localInertiaTensor[1][1] = inertia;
+	localInertiaTensor[2][2] = inertia;
+
+	inverseLocalInertiaTensor = glm::mat3(0);
+	inverseLocalInertiaTensor[0][0] = 1.0f / localInertiaTensor[0][0];
+	inverseLocalInertiaTensor[1][1] = 1.0f / localInertiaTensor[0][0];
+	inverseLocalInertiaTensor[2][2] = 1.0f / localInertiaTensor[0][0];
+}
+
+const glm::mat3& RigidBodyComponent::GetLocalInertiaTensor() const {
+	return localInertiaTensor;
+}
+const glm::mat3& RigidBodyComponent::GetInverseLocalInertiaTensor() const {
+	return inverseLocalInertiaTensor;
+}
+void RigidBodyComponent::SetConstraint(RigidBodyConstraints c) {
+	constraints = c;
+}
+bool RigidBodyComponent::IsRotationLocked(int axis) {
+	return (static_cast<uint8_t>(constraints) & (1 << axis)) != 0;
+}
+void RigidBodyComponent::ApplyConstraint() {
+	if (IsRotationLocked(0)) angularVelocity.x = 0;
+	if (IsRotationLocked(1)) angularVelocity.y = 0;
+	if (IsRotationLocked(2)) angularVelocity.z = 0;
+}

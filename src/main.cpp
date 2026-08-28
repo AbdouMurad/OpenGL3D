@@ -10,10 +10,14 @@ public:
 
 
     void OnTriggerEnter(const TriggerEnterEvent& e) {
-        onGround = true;
+        if (e.trigger && e.trigger->getOwner() == owner) {
+            onGround = true;
+        }
     }
     void OnTriggerExit(const TriggerExitEvent& e) {
-        //onGround = false;
+        if (e.trigger && e.trigger->getOwner() == owner) {
+            onGround = false;
+        }
     }
     void Start() override {
         eventBus->Subscribe(this, &PlayerController::OnTriggerEnter);
@@ -29,8 +33,10 @@ public:
             owner->GetComponent<TransformComponent>()->Translate(-up * 3.0f * dt * speedMult);
         }
         if (Input::GetKey(GLFW_KEY_SPACE) && onGround) {
-            owner->GetComponent<RigidBodyComponent>()->AddImpulse(up * 6.0f);
-            onGround = false;
+            if (RigidBodyComponent* rb = owner->GetComponent<RigidBodyComponent>()) {
+                rb->AddImpulse(up * 6.0f);
+                onGround = false;
+            }
         }
         if (Input::GetKey(GLFW_KEY_W)) {
             owner->GetComponent<TransformComponent>()->Translate(forward * 7.0f * dt * speedMult);
@@ -46,8 +52,8 @@ public:
         }
 
         glm::vec2 mouseDelta = Input::GetMouseDelta();
-        if (abs(mouseDelta.x) > 0.0001f);
-            owner->GetComponent<TransformComponent>()->Rotate({ 0, -mouseDelta.x / 2.0f, 0 });
+        if (abs(mouseDelta.x) > 0.0001f)
+            owner->GetComponent<TransformComponent>()->Rotate({ 0, -mouseDelta.x, 0 });
     };
 };
 
@@ -56,20 +62,22 @@ class Shooter : public Game {
     GameObject* player = nullptr;
 public:
     void Start(float width, float height) override {
-
+        AssetManager::Get().LoadModel("assets/models/sphere_blue.gltf");
+        
         GameObject& floor = scene.CreateObject();
-        floor.GetComponent<TransformComponent>()->SetPosition({ 0,-0.5f,0 });
         floor.GetComponent<TransformComponent>()->SetSize({ 15.0f,1.0f,15.0f });
         floor.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/cube.gltf"));
         RigidBodyComponent* floorRB = floor.AddComponent<RigidBodyComponent>();
         floorRB->ToggleStatic();
         ColliderComponent* floorCollider = floor.AddComponent<ColliderComponent>(SHAPE::Box);
         Box* floorShape = static_cast<Box*>(floorCollider->shape.get());
-        floorShape->halfExtent = glm::vec3(7.5f, 0.5f, 7.5f);
+        floorShape->halfExtent = glm::vec3(7.5, 0.5f, 7.5);
 
 
         player = &scene.CreateObject();
-        player->AddComponent<RigidBodyComponent>();
+        RigidBodyComponent* playerRb = player->AddComponent<RigidBodyComponent>();
+        playerRb->SetConstraint(RigidBodyConstraints::FreezeX | RigidBodyConstraints::FreezeZ);
+        //playerRb->ToggleGravity();
         ColliderComponent* trigger = player->AddComponent<ColliderComponent>(SHAPE::Box);
         ColliderComponent* playerCollider = player->AddComponent<ColliderComponent>(SHAPE::Box);
         player->AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/cube.gltf"));
@@ -78,18 +86,25 @@ public:
         trigger->localOffset.position = glm::vec3(0, -0.5f, 0);
         Box* triggerShape = static_cast<Box*>(trigger->shape.get());
         triggerShape->halfExtent = glm::vec3(0.25f, 0.125, 0.25f);
+        player->GetComponent<TransformComponent>()->SetPosition({ 0,3,0 });
 
-        GameObject& box1 = scene.CreateObject();
-        box1.AddComponent<RigidBodyComponent>()->SetMass(10.0f);
-        box1.AddComponent<ColliderComponent>(SHAPE::Box);
-        box1.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/cube.gltf"));
-        box1.GetComponent<TransformComponent>()->SetPosition({ 5,0,0 });
+        //GameObject& box1 = scene.CreateObject();
+        //RigidBodyComponent* rb1 = box1.AddComponent<RigidBodyComponent>();
+        ////rb1->ToggleGravity();
+        //rb1->SetMass(10.0f);
+        //ColliderComponent* c1 = box1.AddComponent<ColliderComponent>(SHAPE::Box);
+        //box1.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/cube.gltf"));
+        //box1.GetComponent<TransformComponent>()->SetPosition({ 5,0,0 });
+
+
         GameObject& box2 = scene.CreateObject();
-        box2.AddComponent<RigidBodyComponent>()->SetMass(10.0f);
+        RigidBodyComponent* rb2 = box2.AddComponent<RigidBodyComponent>();
+        //rb2->ToggleGravity();
+        rb2->SetMass(10.0f);
         box2.AddComponent<ColliderComponent>(SHAPE::Box);
         box2.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/cube.gltf"));
-        box2.GetComponent<TransformComponent>()->SetPosition({ -5,0,0 });
-
+        box2.GetComponent<TransformComponent>()->SetPosition({ 4,1,0 });
+        
 
 
         GameObject& camera = scene.CreateObject();
@@ -97,23 +112,24 @@ public:
         cameraComponent->SetViewport(width, height);
         camera.AddComponent<PointLightComponent>(glm::vec3(1.0f, 1.0f, 1.0f), 15.0f, 180.0f);
         camera.GetComponent<TransformComponent>()->parent = player->GetComponent<TransformComponent>();
-        camera.GetComponent<TransformComponent>()->SetPosition({ 0,2 ,9.0f });
+        camera.GetComponent<TransformComponent>()->SetPosition({ 0, 2, 9.0f });
         scene.SetMainCamera(camera);
 
     }
 
     void Update(float dt) override {
+        //Print(player->GetComponent<TransformComponent>()->GetPosition());
         if (Input::GetMouseButtonDown(0)) {
             GameObject& ball = scene.CreateObject();
             ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/sphere_blue.gltf"));
+            RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
+            rb->SetMass(2);
             ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
             Sphere* ballShape = static_cast<Sphere*>(c->shape.get());
             ballShape->radius = 0.15f;
-            RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
-            rb->SetMass(0.1f);
 
             TransformComponent* transform = player->GetComponent<TransformComponent>();
-            rb->AddImpulse(transform->Forward() * 25.0f);
+            rb->AddImpulse(transform->Forward() * (75.0f * rb->GetMass()));
             ball.GetComponent<TransformComponent>()->SetPosition(transform->GetPosition() + transform->Forward());
             ball.GetComponent<TransformComponent>()->SetSize({ 0.3f,0.3f,0.3f });
         }
@@ -226,6 +242,7 @@ public:
 
 
 int main() {
+    //BallDisplay game;
     Shooter game;
     Application app = Application(1920, 1080, "GAME");
     app.Run(game);

@@ -42,7 +42,8 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 			shader.setInt("u_hasBaseColorTex", 0);
 		}
 		if (material.textures.normal) {
-			shader.setInt("u_hasNormalMap", NORMAL_SLOT);
+			shader.setInt("u_hasNormalMap", 1);
+			shader.setInt("u_normalTex", NORMAL_SLOT);
 			Texture& normalMapTex = AssetManager::Get().GetTexture(material.textures.normal);
 			normalMapTex.Bind(NORMAL_SLOT);
 		}
@@ -50,7 +51,8 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 			shader.setInt("u_hasNormalMap", 0);
 		}
 		if (material.textures.metallicRoughness) {
-			shader.setInt("u_hasMetallicRoughnessTex", METALLIC_ROUGHNESS_SLOT);
+			shader.setInt("u_hasMetallicRoughnessTex", 1);
+			shader.setInt("u_metallicRoughnessTex", METALLIC_ROUGHNESS_SLOT);
 			Texture& mettalicRoughnessTex = AssetManager::Get().GetTexture(material.textures.metallicRoughness);
 			mettalicRoughnessTex.Bind(METALLIC_ROUGHNESS_SLOT);
 		}
@@ -71,8 +73,9 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 			{
 				return glm::distance2(a.position, position) < glm::distance2(b.position, position);
 			});
-		shader.setInt("u_lightCount", lights.size());
-		for (int i = 0; i < lights.size(); ++i) {
+		int lightCount = static_cast<int>(std::min<size_t>(lights.size(), 16));
+		shader.setInt("u_lightCount", lightCount);
+		for (int i = 0; i < lightCount; ++i) {
 			std::string base = "u_lights[" + std::to_string(i) + "]";
 
 			shader.setVec3(base + ".position", lights[i].position);

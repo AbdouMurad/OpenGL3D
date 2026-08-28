@@ -74,6 +74,7 @@ public:
 
 	void Translate(const glm::vec3& delta);
 	void Rotate(const glm::vec3& rotation);
+	void Rotate(const glm::quat& rotation);
 	void Scale(float scale);
 
 	friend std::ostream& operator<<(std::ostream& os, const TransformComponent& transform);
