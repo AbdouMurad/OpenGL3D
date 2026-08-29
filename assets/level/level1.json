@@ -1,0 +1,176 @@
+{
+	"objects": [
+		{
+			"id": 1,
+			"name": "floor",
+			"Transform": {
+				"parent": 0,
+				"position": [ 0, 0, 0 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 25, 1, 25 ]
+			},
+			"Mesh": {
+				"model_name": "cube.gltf"
+			},
+			"RigidBody": {
+				"mass": 1.0,
+				"static": true,
+				"gravity": false,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 25, 1, 25 ],
+					"trigger": false
+				}
+			]
+		},
+		{
+			"name": "player",
+			"id": 2,
+			"Transform": {
+				"parent": 0,
+				"position": [ 0, 3, 0 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "cube.gltf"
+			},
+			"RigidBody": {
+				"mass": 1.0,
+				"static": false,
+				"gravity": true,
+				"constraints": [ "rotation_x", "rotation_z" ]
+			},
+			"Colliders": [
+				{
+					"id": "collider",
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 1, 1, 1 ],
+					"trigger": false
+				},
+				{
+					"id": "trigger",
+					"type": "box",
+					"offset_position": [ 0, -0.5, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 1, 1, 1 ],
+					"trigger": true
+				}
+			]
+
+		},
+		{
+			"name": "camera",
+			"id": 3,
+			"Transform": {
+				"parent": 2,
+				"position": [ 0, 2, 9 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"PointLight": {
+				"color": [ 255, 255, 255 ],
+				"intensity": 15,
+				"range": 85
+			}
+		},
+		{
+			"name": "crate",
+			"id": 4,
+			"Transform": {
+				"parent": 0,
+				"position": [ 5, 1, 0 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "crate/crate.gltf"
+			},
+			"RigidBody": {
+				"mass": 200.0,
+				"static": false,
+				"gravity": true,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"id": "collider",
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 1, 1, 1 ],
+					"trigger": false
+				}
+			]
+
+		},
+		{
+			"name": "crate2",
+			"id": 5,
+			"Transform": {
+				"parent": 0,
+				"position": [ 6.1, 1, 0 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "crate/crate.gltf"
+			},
+			"RigidBody": {
+				"mass": 200.0,
+				"static": false,
+				"gravity": true,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"id": "collider",
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 1, 1, 1 ],
+					"trigger": false
+				}
+			]
+
+		},
+		{
+			"name": "crate3",
+			"id": 6,
+			"Transform": {
+				"parent": 0,
+				"position": [ 5.5, 2, 0 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "crate/crate.gltf"
+			},
+			"RigidBody": {
+				"mass": 500.0,
+				"static": false,
+				"gravity": true,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"id": "collider",
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 1, 1, 1 ],
+					"trigger": false
+				}
+			]
+
+		}
+
+	]
+}

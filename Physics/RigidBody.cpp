@@ -94,6 +94,9 @@ const glm::mat3& RigidBodyComponent::GetInverseLocalInertiaTensor() const {
 void RigidBodyComponent::SetConstraint(RigidBodyConstraints c) {
 	constraints = c;
 }
+void RigidBodyComponent::AddConstraint(RigidBodyConstraints c) {
+	constraints = constraints | c;
+}
 bool RigidBodyComponent::IsRotationLocked(int axis) {
 	return (static_cast<uint8_t>(constraints) & (1 << axis)) != 0;
 }

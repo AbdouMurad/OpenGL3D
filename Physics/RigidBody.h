@@ -66,6 +66,8 @@ public:
     void ToggleGravity();
 
     void ApplyConstraint();
+    void AddConstraint(RigidBodyConstraints c);
+    //void RemoveConstraint(RigidBodyConstraints c);
     void SetConstraint(RigidBodyConstraints c);
     bool IsRotationLocked(int i);
 

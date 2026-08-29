@@ -8,11 +8,13 @@
 #include "Time_.h"
 #include "Render/Renderer.h"
 #include "Core/Scene.h"
+#include "SceneSerializer.h"
 
 class Game {
 private:
 	
 public:
+	SceneSerializer serializer;
 	Scene scene;
 
 	virtual void Start(float width, float height) {};

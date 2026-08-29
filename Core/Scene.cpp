@@ -1,13 +1,31 @@
 #include "Scene.h"
 #include "Render/Renderer.h"
+#include <cmath>
 
 GameObject& Scene::CreateObject() {
 	std::unique_ptr<GameObject> object = std::make_unique<GameObject>();
 	GameObject* ptr = object.get();
 	ptr->AddComponent<TransformComponent>();
+	ptr->SetID(nextID++);
 	objects.push_back(std::move(object));
 	dirtyScene = true;
 	return *ptr;
+}
+GameObject& Scene::CreateObject(ObjectHandle i) {
+	std::unique_ptr<GameObject> object = std::make_unique<GameObject>();
+	GameObject* ptr = object.get();
+	ptr->SetID(i);
+	nextID = i + 1;
+	ptr->AddComponent<TransformComponent>();
+	objects.push_back(std::move(object));
+	dirtyScene = true;
+	return *ptr;
+}
+GameObject& Scene::GetObject(ObjectHandle id) {
+	for (std::unique_ptr<GameObject>& ptr : objects) {
+		if (ptr->GetID() == id) return *ptr.get();
+	}
+	throw std::out_of_range("Game Object ID not found");
 }
 
 void Scene::SetMainCamera(GameObject& camera) {
@@ -36,7 +54,16 @@ void Scene::Update(float dt) {
 	for (std::unique_ptr<GameObject>& object : objects) {
 		object->Update(dt);
 	}
-	physics.Step(dt);
+
+	const float maxPhysicsStep = 1.0f / 120.0f;
+	int subSteps = static_cast<int>(std::ceil(dt / maxPhysicsStep));
+	if (subSteps < 1) subSteps = 1;
+	if (subSteps > 8) subSteps = 8;
+
+	const float stepDt = dt / static_cast<float>(subSteps);
+	for (int i = 0; i < subSteps; ++i) {
+		physics.Step(stepDt);
+	}
 }
 
 void Scene::Render(Renderer& renderer) {

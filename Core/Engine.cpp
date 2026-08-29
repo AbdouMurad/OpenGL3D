@@ -34,7 +34,8 @@ void Application::Run(Game& game) {
 	game.scene.Start();
 	while (!window.ShouldClose()) {
 		Time::Update();
-		float dt = Time::DeltaTime();
+		float dt = Time::DeltaTime();	
+		if (dt > 0.1f) dt = 0.1f;	
 		
 		Input::Update();
 		window.PollEvents();	
@@ -43,8 +44,8 @@ void Application::Run(Game& game) {
 		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		game.scene.Update(dt);
 		game.Update(dt);
+		game.scene.Update(dt);
 		game.scene.Render(renderer);
 
 		glfwSwapBuffers(window.GetHandler());

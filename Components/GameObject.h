@@ -13,6 +13,7 @@ class GameObject;
 
 class Component {
 protected:
+	std::string ID = "";
 	GameObject* owner = nullptr;
 
 public:
@@ -24,7 +25,12 @@ public:
 	GameObject* getOwner() const {
 		return owner;
 	};
-
+	void SetID(std::string s) {
+		ID = s;
+	}
+	const std::string& GetID() const {
+		return ID;
+	}
 	virtual void Start() {}
 	virtual void Update(float dt) {}
 
@@ -87,9 +93,16 @@ public:
 };
 
 class GameObject {
+	ObjectHandle ID;
 	std::vector<std::unique_ptr<Component>> components;
 
 public: 
+	ObjectHandle GetID() const {
+		return ID;
+	}
+	void SetID(ObjectHandle i) {
+		ID = i;
+	}
 	
 	template<typename T, typename... Args>
 	T* AddComponent(Args&&... args) {
@@ -113,6 +126,16 @@ public:
 		}
 		return nullptr;
 	} 
+
+	template<typename T>
+	T* GetComponent(const std::string& s) {
+		for (auto& component : components) {
+			if (auto cast = dynamic_cast<T*>(component.get()))
+				if (component->GetID() == s)
+					return cast;
+		}
+		return nullptr;
+	}
 
 	template<typename T>
 	std::vector<T*> GetComponents() {

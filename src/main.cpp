@@ -30,25 +30,51 @@ public:
         glm::vec3 forward = owner->GetComponent<TransformComponent>()->Forward();
         glm::vec3 up = owner->GetComponent<TransformComponent>()->Up();
 
-        if (Input::GetKey(GLFW_KEY_LEFT_CONTROL)) {
-            owner->GetComponent<TransformComponent>()->Translate(-up * 3.0f * dt * speedMult);
+        RigidBodyComponent* rb = owner->GetComponent<RigidBodyComponent>();
+        glm::vec3 moveDir(0.0f);
+        if (Input::GetKey(GLFW_KEY_W)) moveDir += forward;
+        if (Input::GetKey(GLFW_KEY_S)) moveDir -= forward;
+        if (Input::GetKey(GLFW_KEY_A)) moveDir -= right;
+        if (Input::GetKey(GLFW_KEY_D)) moveDir += right;
+
+        if (rb) {
+            glm::vec3 velocity = rb->GetVelocity();
+            if (glm::length2(moveDir) > 0.0f) {
+                moveDir = glm::normalize(moveDir);
+                velocity.x = moveDir.x * 7.0f * speedMult;
+                velocity.z = moveDir.z * 7.0f * speedMult;
+            }
+            else {
+                velocity.x = 0.0f;
+                velocity.z = 0.0f;
+            }
+            if (Input::GetKey(GLFW_KEY_LEFT_CONTROL)) {
+                velocity.y = -3.0f * speedMult;
+            }
+            rb->SetVelocity(velocity);
         }
-        if (Input::GetKeyDown(GLFW_KEY_SPACE) && groundOverlaps) {
-            if (RigidBodyComponent* rb = owner->GetComponent<RigidBodyComponent>()) {
-                rb->AddImpulse(up * 6.0f);
+        else {
+            if (Input::GetKey(GLFW_KEY_LEFT_CONTROL)) {
+                owner->GetComponent<TransformComponent>()->Translate(-up * 3.0f * dt * speedMult);
+            }
+            if (Input::GetKey(GLFW_KEY_W)) {
+                owner->GetComponent<TransformComponent>()->Translate(forward * 7.0f * dt * speedMult);
+            }
+            if (Input::GetKey(GLFW_KEY_S)) {
+                owner->GetComponent<TransformComponent>()->Translate(-forward * 7.0f * dt * speedMult);
+            }
+            if (Input::GetKey(GLFW_KEY_A)) {
+                owner->GetComponent<TransformComponent>()->Translate(-right * 7.0f * dt * speedMult);
+            }
+            if (Input::GetKey(GLFW_KEY_D)) {
+                owner->GetComponent<TransformComponent>()->Translate(right * 7.0f * dt * speedMult);
             }
         }
-        if (Input::GetKey(GLFW_KEY_W)) {
-            owner->GetComponent<TransformComponent>()->Translate(forward * 7.0f * dt * speedMult);
-        }
-        if (Input::GetKey(GLFW_KEY_S)) {
-            owner->GetComponent<TransformComponent>()->Translate(-forward * 7.0f * dt * speedMult);
-        }
-        if (Input::GetKey(GLFW_KEY_A)) {
-            owner->GetComponent<TransformComponent>()->Translate(-right * 7.0f * dt * speedMult);
-        }
-        if (Input::GetKey(GLFW_KEY_D)) {
-            owner->GetComponent<TransformComponent>()->Translate(right * 7.0f * dt * speedMult);
+
+        if (Input::GetKeyDown(GLFW_KEY_SPACE) && groundOverlaps) {
+            if (rb) {
+                rb->AddImpulse(up * 6.0f);
+            }
         }
 
         glm::vec2 mouseDelta = Input::GetMouseDelta();
@@ -77,6 +103,8 @@ public:
         player = &scene.CreateObject();
         RigidBodyComponent* playerRb = player->AddComponent<RigidBodyComponent>();
         playerRb->SetConstraint(RigidBodyConstraints::FreezeX | RigidBodyConstraints::FreezeZ);
+        //playerRb->AddConstraint(RigidBodyConstraints::FreezeX);
+        //playerRb->AddConstraint(RigidBodyConstraints::FreezeZ);
         //playerRb->ToggleGravity();
         ColliderComponent* trigger = player->AddComponent<ColliderComponent>(SHAPE::Box);
         ColliderComponent* playerCollider = player->AddComponent<ColliderComponent>(SHAPE::Box);
@@ -241,9 +269,43 @@ public:
 };
 
 
+class LevelLoader : public Game {
+    GameObject* player = nullptr;
+public:
+    void Start(float width, float height) override {
+        
+        serializer.Load("assets/level/level1.json", scene);
+        player = &scene.GetObject(2);
+        player->AddComponent<PlayerController>(&scene.eventBus);
+
+        GameObject& camera = scene.GetObject(3);
+        CameraComponent* cameraComponent = camera.AddComponent<CameraComponent>(width, height);
+        cameraComponent->SetViewport(width, height);
+        scene.SetMainCamera(camera);
+    }
+
+    void Update(float dt) override {
+        if (Input::GetMouseButtonDown(0)) {
+            GameObject& ball = scene.CreateObject();
+            ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/sphere_blue.gltf"));
+            RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
+            rb->SetMass(2);
+            ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
+            Sphere* ballShape = static_cast<Sphere*>(c->shape.get());
+            ballShape->radius = 0.15f;
+
+            TransformComponent* transform = player->GetComponent<TransformComponent>();
+            rb->AddImpulse(transform->Forward() * (75.0f * rb->GetMass()));
+            ball.GetComponent<TransformComponent>()->SetPosition(transform->GetPosition() + transform->Forward());
+            ball.GetComponent<TransformComponent>()->SetSize({ 0.3f,0.3f,0.3f });
+        }
+    }
+};
+
 int main() {
+    LevelLoader game;
     //BallDisplay game;
-    Shooter game;
+    //Shooter game;
     Application app = Application(1920, 1080, "GAME");
     app.Run(game);
     return 0;
