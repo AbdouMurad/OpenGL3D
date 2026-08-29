@@ -3,7 +3,7 @@
 
 class PlayerController : public Component {
     EventBus* eventBus;
-    bool onGround = false;
+    int groundOverlaps = 0;
 public:
     PlayerController(EventBus* eb)
         :   eventBus(eb) {}
@@ -11,12 +11,12 @@ public:
 
     void OnTriggerEnter(const TriggerEnterEvent& e) {
         if (e.trigger && e.trigger->getOwner() == owner) {
-            onGround = true;
+            ++groundOverlaps;
         }
     }
     void OnTriggerExit(const TriggerExitEvent& e) {
         if (e.trigger && e.trigger->getOwner() == owner) {
-            onGround = false;
+            groundOverlaps = std::max(0, groundOverlaps - 1);
         }
     }
     void Start() override {
@@ -29,13 +29,13 @@ public:
         glm::vec3 right = owner->GetComponent<TransformComponent>()->Right();
         glm::vec3 forward = owner->GetComponent<TransformComponent>()->Forward();
         glm::vec3 up = owner->GetComponent<TransformComponent>()->Up();
+
         if (Input::GetKey(GLFW_KEY_LEFT_CONTROL)) {
             owner->GetComponent<TransformComponent>()->Translate(-up * 3.0f * dt * speedMult);
         }
-        if (Input::GetKey(GLFW_KEY_SPACE) && onGround) {
+        if (Input::GetKeyDown(GLFW_KEY_SPACE) && groundOverlaps) {
             if (RigidBodyComponent* rb = owner->GetComponent<RigidBodyComponent>()) {
                 rb->AddImpulse(up * 6.0f);
-                onGround = false;
             }
         }
         if (Input::GetKey(GLFW_KEY_W)) {
