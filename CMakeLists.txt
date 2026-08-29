@@ -20,12 +20,9 @@ add_executable(OpenGL3D
     Render/GPU/Buffer.cpp
     Render/GPU/shaderClass.h
     Render/GPU/ShaderClass.cpp
-    
     Render/Model.h
     Render/Renderer.h
     Render/Material.h
-    
-    
     Render/Model.cpp
     Render/Renderer.cpp
     Render/stb.cpp
@@ -34,11 +31,36 @@ add_executable(OpenGL3D
     Core/Input.cpp
     Core/Time.cpp
     Core/Window.cpp
+    Core/AssetManager.h
+    Core/AssetManager.cpp
+    Core/Handlers.h
+    Core/ShaderManager.h
+    Core/ShaderManager.cpp
+    Core/Scene.cpp
+    Core/Scene.h
+    Core/SceneSerializer.h
+    Core/SceneSerializer.cpp
 
     Components/Camera.cpp
     Components/Camera.h
- "Components/GameObject.h" "Components/GameObject.cpp" "Core/AssetManager.h" "Core/AssetManager.cpp" "Core/Handlers.h" "Core/ShaderManager.h" "Core/ShaderManager.cpp" "Core/Scene.cpp" "Core/Scene.h"  "Components/Lights.h" "Components/Lights.cpp" "Physics/RigidBody.h"  "Physics/RigidBody.cpp" "Physics/PhysicsWorld.h" "Physics/PhysicsWorld.cpp" "Physics/Collider.h" "Physics/Shape.h" "Physics/Shape.cpp"  "Physics/Collider.cpp" "Events/EventBus.cpp" "Events/EventBus.h" "Events/Events.h" )
+    Components/GameObject.h
+    Components/GameObject.cpp
+    Components/Lights.h
+    Components/Lights.cpp
 
+    Physics/RigidBody.h
+    Physics/RigidBody.cpp
+    Physics/PhysicsWorld.h
+    Physics/PhysicsWorld.cpp
+    Physics/Collider.h
+    Physics/Collider.cpp
+    Physics/Shape.h
+    Physics/Shape.cpp
+
+    Events/EventBus.cpp
+    Events/EventBus.h
+    Events/Events.h
+)
 target_include_directories(OpenGL3D PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${Stb_INCLUDE_DIR}

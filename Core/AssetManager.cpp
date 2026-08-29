@@ -219,7 +219,7 @@ static Model* loadGLTF(const std::string& filePath) {
 	std::ifstream file(filePath);
 	if (!file.is_open())
 	{
-		std::cout << "FILE COULD NOT BE OPENed: " << filePath << std::endl;
+		std::cout << "FILE COULD NOT BE OPENED: " << filePath << std::endl;
 		return nullptr;
 	}
 	std::stringstream buffer;

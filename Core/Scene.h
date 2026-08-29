@@ -7,6 +7,7 @@
 #include "Components/Lights.h"
 
 #include "Physics/PhysicsWorld.h"
+#include <stdexcept>
 
 class Renderer;
 class RenderLight;
@@ -19,9 +20,12 @@ class Scene {
 	PhysicsWorld physics = PhysicsWorld(eventBus);
 
 	bool dirtyScene = false;
+	ObjectHandle nextID = 1;
 public:
 	EventBus eventBus;
+	GameObject& GetObject(ObjectHandle id);
 	GameObject& CreateObject();
+	GameObject& CreateObject(ObjectHandle i);
 
 	void SetMainCamera(GameObject& camera);
 	CameraComponent* GetMainCamera();
