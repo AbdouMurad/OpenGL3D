@@ -7,10 +7,10 @@
 				"parent": 0,
 				"position": [ 0, 0, 0 ],
 				"rotation": [ 0, 0, 0 ],
-				"size": [ 25, 1, 25 ]
+				"size": [ 1, 1, 1 ]
 			},
 			"Mesh": {
-				"model_name": "cube.gltf"
+				"model_name": "ground/brick.gltf"
 			},
 			"RigidBody": {
 				"mass": 1.0,
@@ -23,7 +23,7 @@
 					"type": "box",
 					"offset_position": [ 0, 0, 0 ],
 					"offset_rotation": [ 0, 0, 0 ],
-					"extent": [ 25, 1, 25 ],
+					"extent": [ 5, 1, 5 ],
 					"trigger": false
 				}
 			]
@@ -44,7 +44,7 @@
 				"mass": 1.0,
 				"static": false,
 				"gravity": true,
-				"constraints": [ "rotation_x", "rotation_z" ]
+				"constraints": [ "rotation_x", "rotation_y", "rotation_z" ]
 			},
 			"Colliders": [
 				{
@@ -60,7 +60,7 @@
 					"type": "box",
 					"offset_position": [ 0, -0.5, 0 ],
 					"offset_rotation": [ 0, 0, 0 ],
-					"extent": [ 1, 1, 1 ],
+					"extent": [ 0.8, 1, 0.8 ],
 					"trigger": true
 				}
 			]
@@ -94,7 +94,7 @@
 				"model_name": "crate/crate.gltf"
 			},
 			"RigidBody": {
-				"mass": 200.0,
+				"mass": 100.0,
 				"static": false,
 				"gravity": true,
 				"constraints": []
@@ -124,7 +124,7 @@
 				"model_name": "crate/crate.gltf"
 			},
 			"RigidBody": {
-				"mass": 200.0,
+				"mass": 100.0,
 				"static": false,
 				"gravity": true,
 				"constraints": []
@@ -154,7 +154,7 @@
 				"model_name": "crate/crate.gltf"
 			},
 			"RigidBody": {
-				"mass": 500.0,
+				"mass": 100.0,
 				"static": false,
 				"gravity": true,
 				"constraints": []
@@ -170,6 +170,146 @@
 				}
 			]
 
+		},
+		{
+			"id": 7,
+			"name": "floor2",
+			"Transform": {
+				"parent": 0,
+				"position": [ 5, 0, 0 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "ground/brick.gltf"
+			},
+			"RigidBody": {
+				"mass": 1.0,
+				"static": true,
+				"gravity": false,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 5, 1, 5 ],
+					"trigger": false
+				}
+			]
+		},
+		{
+			"id": 8,
+			"name": "floor3",
+			"Transform": {
+				"parent": 0,
+				"position": [ -5, 0, 0 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "ground/brick.gltf"
+			},
+			"RigidBody": {
+				"mass": 1.0,
+				"static": true,
+				"gravity": false,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 5, 1, 5 ],
+					"trigger": false
+				}
+			]
+		},
+		{
+			"id": 9,
+			"name": "floor3",
+			"Transform": {
+				"parent": 0,
+				"position": [ 5, 0, 5 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "ground/brick.gltf"
+			},
+			"RigidBody": {
+				"mass": 1.0,
+				"static": true,
+				"gravity": false,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 5, 1, 5 ],
+					"trigger": false
+				}
+			]
+		},
+		{
+			"id": 10,
+			"name": "floor4",
+			"Transform": {
+				"parent": 0,
+				"position": [ 0, 0, 5 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "ground/brick.gltf"
+			},
+			"RigidBody": {
+				"mass": 1.0,
+				"static": true,
+				"gravity": false,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 5, 1, 5 ],
+					"trigger": false
+				}
+			]
+		},
+		{
+			"id": 11,
+			"name": "floor5",
+			"Transform": {
+				"parent": 0,
+				"position": [ -5, 0, 5 ],
+				"rotation": [ 0, 0, 0 ],
+				"size": [ 1, 1, 1 ]
+			},
+			"Mesh": {
+				"model_name": "ground/brick.gltf"
+			},
+			"RigidBody": {
+				"mass": 1.0,
+				"static": true,
+				"gravity": false,
+				"constraints": []
+			},
+			"Colliders": [
+				{
+					"type": "box",
+					"offset_position": [ 0, 0, 0 ],
+					"offset_rotation": [ 0, 0, 0 ],
+					"extent": [ 5, 1, 5 ],
+					"trigger": false
+				}
+			]
 		}
 
 	]

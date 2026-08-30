@@ -77,20 +77,40 @@ bool Collision::BoxSphere(ColliderComponent& a, ColliderComponent& b, Result& re
 	glm::vec3 diff = glm::vec3(matB[3]) - closest;
 
 	float dist2 = glm::length2(diff);
-	if (dist2 < sphereB->radius * sphereB->radius) {
+	const float radius = sphereB->radius;
+	const float radius2 = radius * radius;
+	constexpr float epsilon = 1e-6f;
+	if (dist2 <= radius2 + epsilon) {
 		result.a = &a;
 		result.b = &b;
 		
 		float distance = sqrt(dist2);
 		
-		if (distance < 1e-6f) {
-			result.normal = box.up;
+		if (distance < epsilon) {
+			//how deep contact is from each face (gives exit face)
+			float dx = box.halfExtent.x - abs(x);
+			float dy = box.halfExtent.y - abs(y);
+			float dz = box.halfExtent.z - abs(z);
+
+			if (dx <= dy && dx <= dz) {
+				result.normal = (x >= 0.0f) ? box.right : -box.right;
+				result.penetration = radius + dx;
+			}
+			else if (dy <= dz) {
+				result.normal = (y >= 0.0f) ? box.up : -box.up;
+				result.penetration = radius + dy;
+			}
+			else {
+				result.normal = (z >= 0.0f) ? box.forward : -box.forward;
+				result.penetration = radius + dz;
+			}
+			result.point = glm::vec3(matB[3]) - result.normal * radius;
 		}
 		else {
 			result.normal = diff / distance;
+			result.penetration = radius - distance;
+			result.point = closest;
 		}
-		result.penetration = sphereB->radius - distance;
-		result.point = closest;
 		return true;
 	}
 
@@ -479,11 +499,17 @@ bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& resul
 			result.point = (FurthestPoint(boxA, result.normal) + FurthestPoint(boxB, -result.normal)) * 0.5f;
 		}
 		else {
-			result.point = glm::vec3(0);
+			glm::vec3 center = (boxA.center + boxB.center) * 0.5f;
+			float bestArmSq = -1.0f;
+			glm::vec3 bestPoint = contacts[0];
 			for (const glm::vec3& p : contacts) {
-				result.point += p;
+				float armSq = glm::length2(glm::cross(p - center, result.normal));
+				if (armSq > bestArmSq) {
+					bestArmSq = armSq;
+					bestPoint = p;
+				}
 			}
-			result.point /= static_cast<float>(contacts.size());
+			result.point = bestPoint;
 		}
 	}
 	else {
@@ -589,68 +615,101 @@ void PhysicsWorld::Step(float dt) {
 
 	BuildBroad();
 	BroadPhase();
-	CollisionCheck();
+	constexpr int solverIterations = 6;
+	for (int i = 0; i < solverIterations; ++i) {
+		CollisionCheck();
+	}
 	UpdateTrigger();
 }
-void PhysicsWorld::ResolveCollision(RigidBodyComponent* ra , RigidBodyComponent* rb, Result& result) {
-	float inverseMassA = (ra && !ra->IsStatic()) ? ra->GetInverseMass() : 0.0f;
-	float inverseMassB = (rb && !rb->IsStatic()) ? rb->GetInverseMass() : 0.0f;
-	float totalMass = inverseMassA + inverseMassB;
-	if (totalMass == 0) return; //both static
+void PhysicsWorld::ResolveCollision(RigidBodyComponent* ra, RigidBodyComponent* rb, Result& result) {
+    float inverseMassA = 0.0f;
+    float inverseMassB = 0.0f;
+    glm::mat3 inverseInertiaA(0.0f);
+    glm::mat3 inverseInertiaB(0.0f);
 
-	//impulse resolution
-	glm::vec3 rA = (ra) ? result.point - ra->GetCenterMass() : glm::vec3(0);
-	glm::vec3 rB = (rb) ? result.point - rb->GetCenterMass() : glm::vec3(0);
+    if (ra && !ra->IsStatic()) {
+        inverseMassA = ra->GetInverseMass();
+        glm::mat3 R = glm::mat3_cast(ra->owner->GetComponent<TransformComponent>()->GetQuat());
+        inverseInertiaA = R * ra->GetInverseLocalInertiaTensor() * glm::transpose(R);
+    }
+    if (rb && !rb->IsStatic()) {
+        inverseMassB = rb->GetInverseMass();
+        glm::mat3 R = glm::mat3_cast(rb->owner->GetComponent<TransformComponent>()->GetQuat());
+        inverseInertiaB = R * rb->GetInverseLocalInertiaTensor() * glm::transpose(R);
+    }
 
-	glm::vec3 velocityA = (ra) ? ra->GetVelocity() + glm::cross(ra->GetAngularVelocity(), rA) : glm::vec3(0);
-	glm::vec3 velocityB = (rb) ? rb->GetVelocity() + glm::cross(rb->GetAngularVelocity(), rB) : glm::vec3(0);
+    float totalInverseMass = inverseMassA + inverseMassB;
+    if (totalInverseMass == 0.0f) return;
 
-	glm::vec3 relativeVelocity = velocityB - velocityA;
-	float velocityNormal = glm::dot(result.normal, relativeVelocity);
+    glm::vec3 rA = (ra) ? result.point - ra->GetCenterMass() : glm::vec3(0);
+    glm::vec3 rB = (rb) ? result.point - rb->GetCenterMass() : glm::vec3(0);
 
-	if (velocityNormal > 0) return;
+    glm::vec3 velocityA = (ra) ? ra->GetVelocity() + glm::cross(ra->GetAngularVelocity(), rA) : glm::vec3(0);
+    glm::vec3 velocityB = (rb) ? rb->GetVelocity() + glm::cross(rb->GetAngularVelocity(), rB) : glm::vec3(0);
 
-	glm::mat3 inverseInertiaA(0.0f);
-	glm::mat3 inverseInertiaB(0.0f);
+    glm::vec3 relativeVelocity = velocityB - velocityA;
+    float velocityNormal = glm::dot(result.normal, relativeVelocity);
 
-	if (ra && !ra->IsStatic()) {
-		glm::mat3 R = glm::mat3_cast(ra->owner->GetComponent<TransformComponent>()->GetQuat());
-		inverseInertiaA = R * ra->GetInverseLocalInertiaTensor() * glm::transpose(R);
-	}
-	if (rb && !rb->IsStatic()) {
-		glm::mat3 R = glm::mat3_cast(rb->owner->GetComponent<TransformComponent>()->GetQuat());
-		inverseInertiaB = R * rb->GetInverseLocalInertiaTensor() * glm::transpose(R);
-	}
+    if (velocityNormal <= 0.0f) {
+        glm::vec3 rnA = glm::cross(rA, result.normal);
+        glm::vec3 rnB = glm::cross(rB, result.normal);
 
-	glm::vec3 rnA = glm::cross(rA, result.normal);
-	glm::vec3 rnB = glm::cross(rB, result.normal);
+        float rotationalA = glm::dot(result.normal, glm::cross(inverseInertiaA * rnA, rA));
+        float rotationalB = glm::dot(result.normal, glm::cross(inverseInertiaB * rnB, rB));
 
-	float rotationalA = glm::dot(result.normal, glm::cross(inverseInertiaA * rnA, rA));
-	float rotationalB = glm::dot(result.normal, glm::cross(inverseInertiaB * rnB, rB));
+        float denominator = inverseMassA + inverseMassB + rotationalA + rotationalB;
+        if (denominator > 1e-6f) {
+            float restitution = 0.0f;
+            float j = -(1.0f + restitution) * velocityNormal / denominator;
+            glm::vec3 impulse = j * result.normal;
 
-	float denominator = inverseMassA + inverseMassB + rotationalA + rotationalB;
-	if (denominator <= 1e-6f) return;
-	float restitution = 0.0f; //should be a property on collider or rb
-	float j = -(1.0f + restitution) * velocityNormal / denominator;
-	glm::vec3 impulse = j * result.normal;
-	if (ra && !ra->IsStatic()) {
-		ra->velocity += (-impulse) * ra->inverseMass;
-		ra->angularVelocity += inverseInertiaA * glm::cross(rA, -impulse);
-	}
-	if (rb && !rb->IsStatic()) {
-		rb->velocity += impulse * rb->inverseMass;
-		rb->angularVelocity += inverseInertiaB * glm::cross(rB, impulse);
-	}
+            glm::vec3 frictionImpulse(0.0f);
+            glm::vec3 tangentVelocity = relativeVelocity - result.normal * velocityNormal;
+            if (glm::length2(tangentVelocity) > 1e-6f) {
+                glm::vec3 tangent = glm::normalize(tangentVelocity);
 
-	float percent = 0.8f;
-	float slop = 0.01f;
-	float depth = glm::max(result.penetration - slop, 0.0f);
+                glm::vec3 rtA = glm::cross(rA, tangent);
+                glm::vec3 rtB = glm::cross(rB, tangent);
 
-	glm::vec3 correction = result.normal * (depth / totalMass) * percent;
-	if (ra)
-		ra->Move(-correction * inverseMassA);
-	if (rb)
-		rb->Move(correction * inverseMassB);
+                float rotationalTangentA = glm::dot(tangent, glm::cross(inverseInertiaA * rtA, rA));
+                float rotationalTangentB = glm::dot(tangent, glm::cross(inverseInertiaB * rtB, rB));
+
+                float tangentDenominator = inverseMassA + inverseMassB + rotationalTangentA + rotationalTangentB;
+                if (tangentDenominator > 1e-6f) {
+                    float jt = -glm::dot(relativeVelocity, tangent) / tangentDenominator;
+                    float frictionA = 0.08f;
+                    float frictionB = 0.08f;
+
+                    float friction = std::sqrt(frictionA * frictionB);
+                    float maxFriction = friction * j;
+                    jt = glm::clamp(jt, -maxFriction, maxFriction);
+
+                    frictionImpulse = jt * tangent;
+                }
+            }
+
+            if (ra && !ra->IsStatic()) {
+                ra->velocity += (-impulse - frictionImpulse) * ra->inverseMass;
+                ra->angularVelocity += inverseInertiaA * glm::cross(rA, -impulse - frictionImpulse);
+                ra->angularVelocity *= 0.98f;
+            }
+            if (rb && !rb->IsStatic()) {
+                rb->velocity += (impulse + frictionImpulse) * rb->inverseMass;
+                rb->angularVelocity += inverseInertiaB * glm::cross(rB, impulse + frictionImpulse);
+                rb->angularVelocity *= 0.98f;
+            }
+        }
+    }
+
+	//how aggressive to fix penetration
+    float percent = 0.25f;
+	//tollerance of penetration
+    float slop = 0.01f;
+    float depth = glm::max(result.penetration - slop, 0.0f);
+    glm::vec3 correction = result.normal * (depth / totalInverseMass) * percent;
+
+    if (ra) ra->Move(-correction * inverseMassA);
+    if (rb) rb->Move(correction * inverseMassB);
 }
 void PhysicsWorld::UpdateTrigger() {
 	std::unordered_set<Pair, PairHash>* currentTrigger = triggerBufferSwitch ? &triggerBuffer2 : &triggerBuffer1;
