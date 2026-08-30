@@ -102,7 +102,7 @@ public:
 
         player = &scene.CreateObject();
         RigidBodyComponent* playerRb = player->AddComponent<RigidBodyComponent>();
-        playerRb->SetConstraint(RigidBodyConstraints::FreezeX | RigidBodyConstraints::FreezeZ);
+		playerRb->SetConstraint(RigidBodyConstraints::FreezeX | RigidBodyConstraints::FreezeY | RigidBodyConstraints::FreezeZ);
         //playerRb->AddConstraint(RigidBodyConstraints::FreezeX);
         //playerRb->AddConstraint(RigidBodyConstraints::FreezeZ);
         //playerRb->ToggleGravity();
@@ -287,15 +287,15 @@ public:
     void Update(float dt) override {
         if (Input::GetMouseButtonDown(0)) {
             GameObject& ball = scene.CreateObject();
-            ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/sphere_blue.gltf"));
+            ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/fireball.gltf"));
             RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
-            rb->SetMass(2);
+            rb->SetMass(5);
             ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
             Sphere* ballShape = static_cast<Sphere*>(c->shape.get());
             ballShape->radius = 0.15f;
 
             TransformComponent* transform = player->GetComponent<TransformComponent>();
-            rb->AddImpulse(transform->Forward() * (75.0f * rb->GetMass()));
+            rb->AddImpulse(transform->Forward() * (50.0f * rb->GetMass()));
             ball.GetComponent<TransformComponent>()->SetPosition(transform->GetPosition() + transform->Forward());
             ball.GetComponent<TransformComponent>()->SetSize({ 0.3f,0.3f,0.3f });
         }

@@ -22,9 +22,12 @@ uniform sampler2D u_metallicRoughnessTex;
 uniform bool u_hasBaseColorTex;
 uniform sampler2D u_baseColorTex;
 
-uniform bool u_hasNormalMap;
+uniform bool u_hasNormalTex;
 uniform sampler2D u_normalTex;
 uniform float u_normalScale;
+
+uniform bool u_hasEmissiveTex;
+uniform sampler2D u_emissiveTex;
 
 const int MAX_LIGHTS = 16;
 
@@ -77,7 +80,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 vec3 getNormal() {
 	vec3 N = normalize(Normal);
 
-	if (!u_hasNormalMap) return N;
+	if (!u_hasNormalTex) return N;
 
 	vec3 T = normalize(Tangent);
 
@@ -209,9 +212,14 @@ void main() {
 	}
 
 	vec3 ambient = vec3(0.03) * albedo.rgb * (1.0 - metallic);
-	lighting += ambient;
+	
+	vec3 emissive = vec3(0.0);
+	if (u_hasEmissiveTex) {
+		emissive = texture(u_emissiveTex, TexCoord).rgb;
+	}
 
-	vec3 finalColor = lighting;
+	
+	vec3 finalColor = lighting + ambient + emissive;
 	FragColor = vec4(finalColor, albedo.a);
 }
 

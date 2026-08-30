@@ -59,6 +59,15 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 		else {
 			shader.setInt("u_hasMetallicRoughnessTex", 0);
 		}
+		if (material.textures.emissive) {
+			shader.setInt("u_hasEmissiveText", 1);
+			shader.setInt("u_emissiveTex", EMISSIVE_SLOT);
+			Texture& emissiveTex = AssetManager::Get().GetTexture(material.textures.emissive);
+			emissiveTex.Bind(EMISSIVE_SLOT);
+		}
+		else {
+			shader.setInt("u_hasEmissiveText", 0);
+		}
 
 
 		//Lights
