@@ -1,6 +1,17 @@
 #include "DebugRender.h"
 
 bool DebugRenderer::Init() {
+	shaderPtr = &AssetManager::LoadShader("assets/shaders/debug.vert", "assets/shaders/debug.frag");
+
+	vao.Bind();
+	vbo.Bind();
+
+	std::vector<Vertex> empty;
+	vbo.init(empty);
+
+	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
+	vao.Unbind();
+
 	return true;
 }
 bool DebugRenderer::IsDebug() const {
@@ -66,3 +77,21 @@ void DebugRenderer::DrawSphere(const glm::vec3& center, float radius) {
 		);
 	}
 }
+ 
+void DebugRenderer::Render(const glm::mat4& cameraMatrix) {
+	if (vertices.empty() || !debug) return;
+	shaderPtr->Activate();
+	vao.Bind();
+	vbo.SetType(vertices.data(), vertices.size() * sizeof(glm::vec3), GL_DYNAMIC_DRAW);
+
+	shaderPtr->setMat4("u_camMatrix", cameraMatrix);
+
+	glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(vertices.size()));
+
+	vao.Unbind();
+	vertices.clear();
+
+}
+
+//void DebugRenderer::DrawCollider(ColliderComponent* collider) {
+//}

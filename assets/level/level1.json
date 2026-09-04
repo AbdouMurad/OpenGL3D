@@ -80,6 +80,7 @@
 				"intensity": 15,
 				"range": 85
 			}
+
 		},
 		{
 			"name": "crate",
@@ -120,6 +121,7 @@
 				"rotation": [ 0, 0, 0 ],
 				"size": [ 1, 1, 1 ]
 			},
+			
 			"Mesh": {
 				"model_name": "crate/crate.gltf"
 			},

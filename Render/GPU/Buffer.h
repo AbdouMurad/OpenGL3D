@@ -26,6 +26,8 @@ public:
 	void Bind();
 	void Unbind();
 	void Delete();
+
+	void SetType(const void* data, GLsizeiptr size, GLenum usage);
 };
 
 class EBO {
