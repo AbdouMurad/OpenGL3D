@@ -44,7 +44,9 @@ void EBO::Delete() {
 }
 
 //VAO
-VAO::VAO() {
+VAO::VAO()
+	: ID(0) {}
+void VAO::init() {
 	glGenVertexArrays(1, &ID);
 }
 void VAO::LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponenets, GLenum type, GLsizeiptr stride, void* offset) {

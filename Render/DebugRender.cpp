@@ -1,14 +1,16 @@
 #include "DebugRender.h"
+#include "Core/AssetManager.h"
 
-bool DebugRenderer::Init() {
-	shaderPtr = &AssetManager::LoadShader("assets/shaders/debug.vert", "assets/shaders/debug.frag");
-
+bool DebugRenderer::init() {
+	ShaderHandle shaderID = AssetManager::Get().LoadShader("assets/shaders/debug.vert", "assets/shaders/debug.frag");
+	shaderPtr = &AssetManager::Get().GetShader(shaderID);
+	vao.init();
 	vao.Bind();
 	vbo.Bind();
 
 	std::vector<Vertex> empty;
 	vbo.init(empty);
-
+	
 	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
 	vao.Unbind();
 
@@ -79,18 +81,19 @@ void DebugRenderer::DrawSphere(const glm::vec3& center, float radius) {
 }
  
 void DebugRenderer::Render(const glm::mat4& cameraMatrix) {
-	if (vertices.empty() || !debug) return;
+	if (vertices.empty() || !debug || !shaderPtr) return;
 	shaderPtr->Activate();
 	vao.Bind();
 	vbo.SetType(vertices.data(), vertices.size() * sizeof(glm::vec3), GL_DYNAMIC_DRAW);
 
+	// set camera and color
 	shaderPtr->setMat4("u_camMatrix", cameraMatrix);
+	shaderPtr->setVec3("u_color", glm::vec3(1.0f, 0.0f, 0.0f)); // choose desired debug color
 
 	glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(vertices.size()));
 
 	vao.Unbind();
 	vertices.clear();
-
 }
 
 //void DebugRenderer::DrawCollider(ColliderComponent* collider) {

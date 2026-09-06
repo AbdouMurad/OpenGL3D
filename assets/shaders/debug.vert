@@ -2,9 +2,8 @@
 
 layout (location = 0) in vec3 aPos;
 
-unifrom mat4 u_camMatrix;
-
+uniform mat4 u_camMatrix;
 
 void main() {
-	gl_position = u_camMatrix * vec4(aPos, 1.0);
+	gl_Position = u_camMatrix * vec4(aPos, 1.0);
 }

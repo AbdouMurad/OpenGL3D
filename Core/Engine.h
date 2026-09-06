@@ -6,7 +6,7 @@
 #include "Window.h"
 #include "Input.h"
 #include "Time_.h"
-#include "Render/Renderer.h"
+#include "Render/DebugRender.h"
 #include "Core/Scene.h"
 #include "SceneSerializer.h"
 
@@ -36,6 +36,7 @@ private:
 
 	Window window;
 	Renderer renderer;
+	DebugRenderer debugRenderer;
 
 	float deltaTime = 0.0f;
 	float lastFrame = 0.0f;

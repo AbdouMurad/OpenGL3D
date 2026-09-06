@@ -7,7 +7,7 @@
 class DebugRenderer
 {
 public:
-    bool Init();
+    bool init();
     void Render(const glm::mat4& cameraMatrix);
 
     void ToggleDebug();
@@ -19,7 +19,7 @@ public:
     //void DrawCollider(ColliderComponent* collider);
 
 private:
-    bool debug = false;
+    bool debug = true;
     std::vector<glm::vec3> vertices;
 
     VBO vbo;

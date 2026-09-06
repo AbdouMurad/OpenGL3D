@@ -1,5 +1,5 @@
 #include "Scene.h"
-#include "Render/Renderer.h"
+#include "Render/DebugRender.h"
 #include <cmath>
 
 GameObject& Scene::CreateObject() {
@@ -64,6 +64,25 @@ void Scene::Update(float dt) {
 	for (int i = 0; i < subSteps; ++i) {
 		physics.Step(stepDt);
 	}
+}
+
+void Scene::DebugRender(DebugRenderer& renderer) {
+	for (const auto& obj : objects) {
+		ColliderComponent* collider = obj.get()->GetComponent<ColliderComponent>();
+		if (collider) {
+			if (collider->shape.get()->GetType() == SHAPE::Box) {
+				glm::mat4 mat = collider->GetMatrix();
+				Box* shape = static_cast<Box*>(collider->shape.get());
+				glm::vec3 axes[3] = {
+					glm::normalize(mat[0]),
+					glm::normalize(mat[1]),
+					glm::normalize(mat[2])
+				};
+				renderer.DrawBox(mat[3], axes, shape->halfExtent);
+			}
+		}
+	}
+	renderer.Render(GetMainCamera()->cameraMatrix);
 }
 
 void Scene::Render(Renderer& renderer) {

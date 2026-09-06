@@ -26,6 +26,8 @@ add_executable(OpenGL3D
     Render/Model.cpp
     Render/Renderer.cpp
     Render/stb.cpp
+    Render/DebugRender.h 
+    Render/DebugRender.cpp
 
     Core/Engine.cpp
     Core/Input.cpp
@@ -60,7 +62,7 @@ add_executable(OpenGL3D
     Events/EventBus.cpp
     Events/EventBus.h
     Events/Events.h
- "Render/DebugRender.h" "Render/DebugRender.cpp")
+    )
 target_include_directories(OpenGL3D PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${Stb_INCLUDE_DIR}

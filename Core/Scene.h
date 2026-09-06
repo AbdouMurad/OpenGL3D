@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 class Renderer;
+class DebugRenderer;
 class RenderLight;
 class RenderObject;
 class RenderFrame;
@@ -33,5 +34,6 @@ public:
 	void Start();
 	void Update(float dt);
 	void Render(Renderer& renderer);
+	void DebugRender(DebugRenderer& renderer);
 
 };

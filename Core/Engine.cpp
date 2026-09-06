@@ -28,8 +28,10 @@ void Application::Run(Game& game) {
 	glViewport(0, 0, width, height);
 
 	renderer.init();
+	debugRenderer.init();
 	Collision::init();
 	Input::Init(window.GetHandler());
+	
 	game.Start(width, height);
 	game.scene.Start();
 	while (!window.ShouldClose()) {
@@ -47,6 +49,9 @@ void Application::Run(Game& game) {
 		game.Update(dt);
 		game.scene.Update(dt);
 		game.scene.Render(renderer);
+		if (debugRenderer.IsDebug()) {
+			game.scene.DebugRender(debugRenderer);
+		}
 
 		glfwSwapBuffers(window.GetHandler());
 	}

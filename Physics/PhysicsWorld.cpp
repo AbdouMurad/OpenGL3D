@@ -1,5 +1,7 @@
 #include "PhysicsWorld.h"
 
+#include "Render/DebugRender.h"
+
 PhysicsWorld::PhysicsWorld(EventBus& eb)
 	: eventBus(eb) {}
 
