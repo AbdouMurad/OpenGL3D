@@ -74,15 +74,16 @@ void RigidBodyComponent::SetLocalInertiaTensor(const Box* box) {
 }
 void RigidBodyComponent::SetLocalInertiaTensor(const Sphere* sphere) {
 	localInertiaTensor = glm::mat3(0);
-	float inertia = mass * sphere->radius * sphere->radius * 2.0f / 3.0f;
+    // Solid sphere inertia: I = 2/5 m r^2
+    float inertia = mass * sphere->radius * sphere->radius * 2.0f / 5.0f;
 	localInertiaTensor[0][0] = inertia;
 	localInertiaTensor[1][1] = inertia;
 	localInertiaTensor[2][2] = inertia;
 
 	inverseLocalInertiaTensor = glm::mat3(0);
 	inverseLocalInertiaTensor[0][0] = 1.0f / localInertiaTensor[0][0];
-	inverseLocalInertiaTensor[1][1] = 1.0f / localInertiaTensor[0][0];
-	inverseLocalInertiaTensor[2][2] = 1.0f / localInertiaTensor[0][0];
+	inverseLocalInertiaTensor[1][1] = 1.0f / localInertiaTensor[1][1];
+	inverseLocalInertiaTensor[2][2] = 1.0f / localInertiaTensor[2][2];
 }
 
 const glm::mat3& RigidBodyComponent::GetLocalInertiaTensor() const {

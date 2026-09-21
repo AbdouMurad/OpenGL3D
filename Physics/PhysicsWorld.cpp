@@ -800,3 +800,7 @@ void PhysicsWorld::Integrate(RigidBodyComponent* body, float dt) {
 
 	}
 }
+
+void PhysicsWorld::DebugRender(DebugRenderer& renderer) {
+
+}

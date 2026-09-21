@@ -86,6 +86,7 @@ void Scene::DebugRender(DebugRenderer& renderer) {
 			}
 		}
 	}
+	physics.DebugRender(renderer);
 	renderer.Render(GetMainCamera()->cameraMatrix);
 }
 

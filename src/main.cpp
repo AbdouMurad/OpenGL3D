@@ -173,7 +173,7 @@ public:
         std::mt19937 gen(rd());
         std::uniform_int_distribution<int> distrib(-6, 6);
 
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 250; i++) {
             GameObject& cube = scene.CreateObject();
             cube.GetComponent<TransformComponent>()->SetPosition(glm::vec3((float)distrib(gen), (float)distrib(gen)/2.0f, (float)distrib(gen)));
             if (i % 3 == 0) {
@@ -303,8 +303,8 @@ public:
 };
 
 int main() {
-    //LevelLoader game;
-    BallDisplay game;
+    LevelLoader game;
+    //BallDisplay game;
     //Shooter game;
     Application app = Application(1920, 1080, "GAME");
     app.Run(game);
