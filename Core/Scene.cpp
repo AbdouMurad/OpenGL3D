@@ -80,6 +80,10 @@ void Scene::DebugRender(DebugRenderer& renderer) {
 				};
 				renderer.DrawBox(mat[3], axes, shape->halfExtent);
 			}
+			if (collider->shape.get()->GetType() == SHAPE::Sphere) {
+				glm::mat4 mat = collider->GetMatrix();
+				renderer.DrawSphere(mat[3], static_cast<Sphere*>(collider->shape.get())->radius);
+			}
 		}
 	}
 	renderer.Render(GetMainCamera()->cameraMatrix);

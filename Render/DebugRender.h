@@ -19,7 +19,7 @@ public:
     //void DrawCollider(ColliderComponent* collider);
 
 private:
-    bool debug = true;
+    bool debug = false;
     std::vector<glm::vec3> vertices;
 
     VBO vbo;

@@ -411,9 +411,7 @@ std::vector<glm::vec3> Collision::GenerateManifold(const OBB& box1, const OBB& b
 			manifold.push_back(point);
 		}
 	}
-
-
-		
+	
 	return manifold;
 }
 

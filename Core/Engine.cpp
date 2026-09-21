@@ -41,6 +41,7 @@ void Application::Run(Game& game) {
 		
 		Input::Update();
 		window.PollEvents();	
+		if (Input::GetKeyDown(GLFW_KEY_Z)) debugRenderer.ToggleDebug();
 
 		glClearColor(0.529, 0.808f, 0.922f, 1.0f);
 		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
