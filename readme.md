@@ -1,190 +1,77 @@
-﻿# OpenGL3D Setup Guide
+﻿# OpenGL3D Engine — Overview and Setup
 
-This guide explains how to set up the development environment for OpenGL3D.
+This repository contains a small 3D engine implemented with OpenGL and a minimal component system. It includes a renderer, an asset manager, scene serialization, and a simple physics system. The instructions below describe how to build and run the engine and identify key locations in the codebase.
 
-## Requirements
+Prerequisites
 
-Install the following:
+- Visual Studio 2022 with C++ workload
+- CMake 3.25 or later
+- vcpkg (optional) for dependency management
 
-* Visual Studio 2022 Community (or higher)
-* C++ development tools
-* CMake
-* vcpkg
+Build and run
 
----
+1. If you use vcpkg, install and bootstrap it and integrate with Visual Studio.
+2. Open the project folder in Visual Studio: File -> Open -> Folder.
+3. Choose the `x64` configuration and build the project (Ctrl+Shift+B).
+4. Run the application with F5 or Ctrl+F5.
 
-# 1. Install Visual Studio 2022
+If CMake configuration fails, delete the build output folder and reopen the project so CMake can reconfigure.
 
-Download and install:
+Repository layout
 
-https://visualstudio.microsoft.com/vs/community/
+- `src/` — engine implementation and demo games
+  - `Core/` — engine loop, scene management, serialization, timing
+  - `Components/` — transform, camera, mesh renderer, lights, game object definitions
+  - `Physics/` — `PhysicsWorld`, collision detection and response, shapes, rigid bodies
+  - `Render/` — renderer, debug renderer, GPU utilities, shaders
+  - `Events/` — event bus and event types
+- `assets/` — shaders, models, textures, example level JSON files
 
-During installation, select:
+Important systems
 
-```
-Desktop development with C++
-```
+- Scene
+  - `Scene` holds `GameObject` instances and runs their update methods. `Scene::Start()` gathers physics bodies and colliders.
 
-Make sure these components are installed:
+- Physics
+  - Broad phase: constructs AABBs per collider and generates candidate pairs.
+  - Narrow phase: per-shape collision tests. Current supported shapes: box and sphere. Box-box uses SAT with manifold generation.
+  - Solver: sequential impulse per contact, with positional correction. Solver parameters are in `PhysicsWorld.cpp`: `solverIterations`, positional correction `percent` and `slop`. Tuning these affects stack stability.
 
-```
-✓ MSVC v143 - VS 2022 C++ x64/x86 build tools
-✓ C++ CMake tools for Windows
-✓ Windows 10/11 SDK
-```
+- Rendering
+  - Forward renderer submitting `RenderFrame` with lights and draw calls.
+  - PBR shader provided in `assets/shaders/pbr.frag` and a default shader in `assets/shaders/default.frag`.
+  - `DebugRenderer` draws wireframes for colliders and debug visuals.
 
----
+- Assets and serialization
+  - `AssetManager` loads models and shaders.
+  - `SceneSerializer` loads scene data from JSON files under `assets/level`.
 
-# 2. Install vcpkg
+Debugging and tuning
 
-Clone and install vcpkg:
+- Use the debug renderer to draw colliders and contact points.
+- Common adjustments for physics stability:
+  - Increase `solverIterations` to improve contact convergence for stacks.
+  - Lower positional correction `percent` and increase `slop` to avoid tiny corrective pushes.
+  - Add small linear damping and sleeping thresholds in `Integrate` to remove micro velocities.
+  - For the most stable stacks implement persistent contact caching and warm-starting.
 
-```powershell
-cd C:\
-git clone https://github.com/microsoft/vcpkg.git
-```
+Where to change things
 
-Build vcpkg:
+- `Core/Scene.cpp` and `Core/Scene.h` — scene lifecycle and where physics is run
+- `Physics/PhysicsWorld.cpp` — integration, collision detection, and solver
+- `Render/Renderer.cpp` and `Render/` — rendering and shader use
+- `Components/` — add or modify components (camera, light, mesh, rigid body, collider)
 
-```powershell
-cd C:\vcpkg
-.\bootstrap-vcpkg.bat
-```
+Extending the engine
 
-Enable Visual Studio integration:
+- Add new components by deriving from `Component` and attaching them to `GameObject` instances.
+- Add new collision shapes: extend `Shape.h`, add a broadphase AABB function and a narrowphase test, then register in `Collision::init()`.
+- Modify or add shaders in `assets/shaders/` and update the renderer to set uniforms as needed.
 
-```powershell
-.\vcpkg integrate install
-```
+Contributing
 
-Verify installation:
+Follow the existing coding patterns. Keep changes minimal and run the project to verify there are no regressions. If making physics changes, test stacks and resting contacts and tune solver parameters accordingly.
 
-```powershell
-vcpkg version
-```
+License
 
----
-
-# 3. Open the Project
-
-Open Visual Studio 2022.
-
-Select:
-
-```
-File
- → Open
- → Folder
-```
-
-Select the OpenGL3D project folder.
-
-The project should contain:
-
-```
-OpenGL3D/
-├── CMakeLists.txt
-├── vcpkg.json
-├── src/
-└── assets/
-```
-
-Visual Studio will automatically detect the CMake project and configure the required dependencies.
-
----
-
-# 4. Build the Project
-
-Select:
-
-```
-x64-Debug
-```
-
-from the configuration dropdown.
-
-Build using:
-
-```
-Build
- → Build All
-```
-
-or:
-
-```
-Ctrl + Shift + B
-```
-
----
-
-# 5. Run the Project
-
-Start debugging:
-
-```
-F5
-```
-
-Run without debugging:
-
-```
-Ctrl + F5
-```
-
----
-
-# Troubleshooting
-
-## CMake Configuration Issues
-
-Delete the generated build folder:
-
-```
-OpenGL3D/build
-```
-
-Then reopen Visual Studio and allow CMake to configure again.
-
----
-
-## vcpkg Not Found
-
-Verify vcpkg is installed:
-
-```
-C:\vcpkg\vcpkg.exe
-```
-
-The CMake toolchain file should exist:
-
-```
-C:\vcpkg\scripts\buildsystems\vcpkg.cmake
-```
-
----
-
-## Wrong Visual Studio Version
-
-This project is configured for:
-
-```
-Visual Studio 2022
-MSVC v143 toolset
-```
-
-If another Visual Studio version is detected, delete the build folder and reopen the project using Visual Studio 2022.
-
----
-
-# Dependencies
-
-Dependencies are managed using vcpkg.
-
-Packages are defined in:
-
-```
-vcpkg.json
-```
-
-Dependencies should be installed automatically when CMake configures the project.
+Check for a license file in the repository root before reuse.
