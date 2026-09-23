@@ -1,6 +1,6 @@
 ﻿# OpenGL3D Engine — Overview and Setup
 
-This repository contains a small 3D engine implemented with OpenGL and a minimal component system. It includes a renderer, an asset manager, scene serialization, and a simple physics system. The instructions below describe how to build and run the engine and identify key locations in the codebase.
+This repository contains a  3D engine implemented with OpenGL and a component system. It includes a renderer, an asset manager, scene serialization, and a simple physics system. The instructions below describe how to build and run the engine and identify key locations in the codebase.
 
 Prerequisites
 
