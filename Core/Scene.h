@@ -22,11 +22,19 @@ class Scene {
 
 	bool dirtyScene = false;
 	ObjectHandle nextID = 1;
+
+	std::vector<GameObject*> pendingDestroy;
+	void FlushDestroyed();
 public:
 	EventBus eventBus;
 	GameObject& GetObject(ObjectHandle id);
 	GameObject& CreateObject();
 	GameObject& CreateObject(ObjectHandle i);
+
+	//deleted at the end of Update, along with every object parented to it. Pointers to it stay valid until then
+	void Destroy(GameObject& object);
+
+	bool Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, RaycastHit& hit, const GameObject* ignore = nullptr);
 
 	void SetMainCamera(GameObject& camera);
 	CameraComponent* GetMainCamera();

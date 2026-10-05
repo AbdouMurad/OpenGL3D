@@ -2,22 +2,16 @@
 
 #include "RigidBody.h"
 #include "Collider.h"
+#include "ContactSolver.h"
 
 #include "Events/EventBus.h"
 #include <unordered_set>
 
+class DebugRenderer;
+
 inline void Print(const glm::vec3& vector) {
 	std::cout << vector.x << ' ' << vector.y << ' ' << vector.z << '\n';
 }
-
-struct Result {
-	ColliderComponent* a = nullptr;
-	ColliderComponent* b = nullptr;
-
-	glm::vec3 normal = glm::vec3(0);
-	float penetration = 0.0f;
-	glm::vec3 point = glm::vec3(0);
-};
 
 namespace Collision {
 	struct OBB {
@@ -44,7 +38,8 @@ namespace Collision {
 	glm::vec3 FurthestPoint(const OBB& box, const glm::vec3& direction);
 	std::vector<glm::vec3> ClipPolygon(const std::vector<glm::vec3>& polygon, const glm::vec3& planeNormal, float planeDistance);
 	std::vector<glm::vec3> GetFaceVertices(const OBB& box, const glm::vec3& normal);
-	std::vector<glm::vec3> GenerateManifold(const OBB& box1, const OBB& box2, const glm::vec3& normal, int bestAxisIndex);
+	std::vector<ContactPoint> GenerateManifold(const OBB& box1, const OBB& box2, const glm::vec3& normal, int bestAxisIndex);
+	std::vector<ContactPoint> ReduceManifold(const std::vector<ContactPoint>& points, const glm::vec3& normal);
 
 	AABB BoxShape(ColliderComponent&);
 	AABB SphereShape(ColliderComponent&);
@@ -87,17 +82,24 @@ struct PairHash {
 };
 
 
+struct RaycastHit {
+	ColliderComponent* collider = nullptr;
+	glm::vec3 point = glm::vec3(0);
+	glm::vec3 normal = glm::vec3(0);
+	float distance = 0.0f;
+};
+
 class PhysicsWorld {
-	void Integrate(RigidBodyComponent* body, float dt);
+	void IntegrateVelocity(RigidBodyComponent* body, float dt);
+	void IntegratePosition(RigidBodyComponent* body, float dt);
 	void BuildBroad();
 	void BroadPhase();
-	void CollisionCheck();
-	void HandleCollision(Result& result);
-	void ResolveCollision(RigidBodyComponent*, RigidBodyComponent*, Result& result);
+	void NarrowPhase();
 	void UpdateTrigger();
-	
 
 	EventBus& eventBus;
+	ContactSolver solver;
+	std::vector<Result> contacts; //kept after Step for debug drawing
 public:
 	void DebugRender(DebugRenderer& renderer);
 	PhysicsWorld(EventBus&);
@@ -111,5 +113,13 @@ public:
 	std::vector<RigidBodyComponent*> bodies;
 	std::vector<ColliderComponent*> colliders;
 	glm::vec3 gravity = glm::vec3(0, -9.81, 0);
+	int solverIterations = 10;
 	void Step(float dt);
+
+	//closest non-trigger collider along the ray. direction must be normalized, colliders owned by ignore are skipped
+	bool Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, RaycastHit& hit, const GameObject* ignore = nullptr) const;
+
+	//drops an object's bodies and colliders before it's deleted. Trigger pairs it was part of get their exit event now,
+	//while the object is still alive, instead of later with a dangling pointer
+	void RemoveObject(GameObject& object);
 };

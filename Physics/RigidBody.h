@@ -57,6 +57,7 @@ public:
 
     const glm::mat3& GetLocalInertiaTensor() const;
     const glm::mat3& GetInverseLocalInertiaTensor() const;
+    glm::mat3 GetInverseInertiaWorld() const;
 
     void SetMass(float mass);
 
@@ -69,10 +70,15 @@ public:
     void AddConstraint(RigidBodyConstraints c);
     //void RemoveConstraint(RigidBodyConstraints c);
     void SetConstraint(RigidBodyConstraints c);
-    bool IsRotationLocked(int i);
+    bool IsRotationLocked(int i) const;
+
+    // fraction of velocity lost per second, roughly air resistance / rolling resistance
+    float linearDamping = 0.0f;
+    float angularDamping = 0.6f;
 
 private:
     friend class PhysicsWorld;
+    friend class ContactSolver;
 
     RigidBodyConstraints constraints = RigidBodyConstraints::None;
 

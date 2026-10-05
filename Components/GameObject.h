@@ -90,6 +90,12 @@ class MeshRenderer : public Component {
 public:
 	ModelHandle modelID = 0;
 	MeshRenderer(ModelHandle m);
+
+	glm::vec3 tint = glm::vec3(1.0f);     //multiplies the material's base color
+	glm::vec3 emissive = glm::vec3(0.0f); //added after lighting, glows without a light
+	bool visible = true;
+	//drawn after the world with a cleared depth buffer, so it's never hidden behind anything (first person weapons)
+	bool overlay = false;
 };
 
 class GameObject {

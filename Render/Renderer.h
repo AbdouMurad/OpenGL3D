@@ -14,6 +14,9 @@ struct RenderLight {
 struct RenderObject {
 	glm::mat4 transform;
 	ModelHandle modelID;
+	glm::vec3 tint = glm::vec3(1.0f);
+	glm::vec3 emissive = glm::vec3(0.0f);
+	bool overlay = false;
 };
 
 struct RenderFrame {
@@ -32,6 +35,7 @@ public:
 
 private:
 	RenderFrame* currentFrame = nullptr;
-	
+	RenderObject* currentObject = nullptr;
+
 	void DrawNode(Node* node, const glm::mat4& parentTransformComponent);
 };

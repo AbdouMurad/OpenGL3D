@@ -22,6 +22,10 @@ public:
 
 	bool isTrigger = false;
 
+	//combined per contact: friction by geometric mean, restitution by max
+	float friction = 0.5f;
+	float restitution = 0.0f; //0 = no bounce, 1 = perfectly elastic
+
 	void Start() override;
 
 	RigidBodyComponent* GetRigidBody();

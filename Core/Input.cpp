@@ -92,4 +92,7 @@ float Input::GetScrollDelta() {
 }
 void Input::SetCursorLocked(bool locked) {
 	glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+	//unaccelerated mouse movement, what you want for mouse look
+	if (glfwRawMouseMotionSupported())
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, locked ? GLFW_TRUE : GLFW_FALSE);
 }

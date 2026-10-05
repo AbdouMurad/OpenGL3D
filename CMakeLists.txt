@@ -13,6 +13,18 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 add_executable(OpenGL3D
     src/main.cpp
+    src/fps/Common.h
+    src/fps/Common.cpp
+    src/fps/Effects.h
+    src/fps/Effects.cpp
+    src/fps/Weapon.h
+    src/fps/Weapon.cpp
+    src/fps/Player.h
+    src/fps/Player.cpp
+    src/fps/Enemy.h
+    src/fps/Enemy.cpp
+    src/fps/FPSGame.h
+    src/fps/FPSGame.cpp
 
     Render/GPU/Texture.h
     Render/GPU/Texture.cpp
@@ -28,6 +40,8 @@ add_executable(OpenGL3D
     Render/stb.cpp
     Render/DebugRender.h 
     Render/DebugRender.cpp
+    Render/UIRenderer.h
+    Render/UIRenderer.cpp
 
     Core/Engine.cpp
     Core/Input.cpp
@@ -56,6 +70,8 @@ add_executable(OpenGL3D
     Physics/PhysicsWorld.cpp
     Physics/Collider.h
     Physics/Collider.cpp
+    Physics/ContactSolver.h
+    Physics/ContactSolver.cpp
     Physics/Shape.h
     Physics/Shape.cpp
 

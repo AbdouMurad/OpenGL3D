@@ -8,8 +8,25 @@ bool Renderer::init() {
 
 void Renderer::Render(RenderFrame& frame) {
 	currentFrame = &frame;
-	for (RenderObject& object : currentFrame->renderObjects)
+	bool hasOverlay = false;
+	for (RenderObject& object : currentFrame->renderObjects) {
+		if (object.overlay) {
+			hasOverlay = true;
+			continue;
+		}
+		currentObject = &object;
 		Renderer::DrawNode(&(AssetManager::Get().GetModel(object.modelID).root), object.transform);
+	}
+	if (hasOverlay) {
+		//overlay objects only depth test against each other
+		glClear(GL_DEPTH_BUFFER_BIT);
+		for (RenderObject& object : currentFrame->renderObjects) {
+			if (!object.overlay) continue;
+			currentObject = &object;
+			Renderer::DrawNode(&(AssetManager::Get().GetModel(object.modelID).root), object.transform);
+		}
+	}
+	currentObject = nullptr;
 	currentFrame = nullptr;
 }
 
@@ -32,6 +49,10 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 
 		//Maybe move this into a function that takes in a material reference?
 		shader.setVec4("u_baseColor", material.properties.baseColor);
+		shader.setFloat("u_metallic", material.properties.metallic);
+		shader.setFloat("u_roughness", material.properties.roughness);
+		shader.setVec3("u_tint", currentObject->tint);
+		shader.setVec3("u_emissiveColor", currentObject->emissive);
 		if (material.textures.baseColor) {
 			shader.setInt("u_hasBaseColorTex", 1);
 			shader.setInt("u_baseColorTex", BASE_COLOR_SLOT);

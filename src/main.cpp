@@ -1,4 +1,5 @@
 #include "Core/Engine.h"
+#include "fps/FPSGame.h"
 #include <random>
 
 class PlayerController : public Component {
@@ -303,10 +304,11 @@ public:
 };
 
 int main() {
-    LevelLoader game;
+    FPSGame game;
+    //LevelLoader game;
     //BallDisplay game;
     //Shooter game;
-    Application app = Application(1920, 1080, "GAME");
+    Application app = Application(1920, 1080, "Iron Arena");
     app.Run(game);
     return 0;
 }

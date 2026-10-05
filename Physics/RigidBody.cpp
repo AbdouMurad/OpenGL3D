@@ -92,13 +92,27 @@ const glm::mat3& RigidBodyComponent::GetLocalInertiaTensor() const {
 const glm::mat3& RigidBodyComponent::GetInverseLocalInertiaTensor() const {
 	return inverseLocalInertiaTensor;
 }
+glm::mat3 RigidBodyComponent::GetInverseInertiaWorld() const {
+	glm::mat3 R = glm::mat3_cast(owner->GetComponent<TransformComponent>()->GetQuat());
+	glm::mat3 inverseInertia = R * inverseLocalInertiaTensor * glm::transpose(R);
+	//a frozen axis acts like infinite inertia around it: zero its row and column so
+	//torque about that axis does nothing, and the solver knows the body can't turn that way
+	for (int axis = 0; axis < 3; ++axis) {
+		if (!IsRotationLocked(axis)) continue;
+		for (int k = 0; k < 3; ++k) {
+			inverseInertia[axis][k] = 0.0f;
+			inverseInertia[k][axis] = 0.0f;
+		}
+	}
+	return inverseInertia;
+}
 void RigidBodyComponent::SetConstraint(RigidBodyConstraints c) {
 	constraints = c;
 }
 void RigidBodyComponent::AddConstraint(RigidBodyConstraints c) {
 	constraints = constraints | c;
 }
-bool RigidBodyComponent::IsRotationLocked(int axis) {
+bool RigidBodyComponent::IsRotationLocked(int axis) const {
 	return (static_cast<uint8_t>(constraints) & (1 << axis)) != 0;
 }
 void RigidBodyComponent::ApplyConstraint() {

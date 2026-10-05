@@ -12,7 +12,9 @@ void CameraComponent::UpdateMatrix() {
 	TransformComponent* transform = owner->GetComponent<TransformComponent>();
 	
 
-	view = glm::lookAt(transform->GetPosition(), transform->GetPosition() + GetOrientation(), transform->Up());
+	//world space up: Up() only uses the local rotation, which rolls the view when the camera has a rotated parent
+	glm::vec3 up = transform->GetQuat() * glm::vec3(0, 1, 0);
+	view = glm::lookAt(transform->GetPosition(), transform->GetPosition() + GetOrientation(), up);
 	
 	projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
 	cameraMatrix = projection * view;

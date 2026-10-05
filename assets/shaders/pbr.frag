@@ -13,6 +13,9 @@ uniform vec3 u_cameraPos;
 
 uniform vec4 u_baseColor;
 
+uniform vec3 u_tint;
+uniform vec3 u_emissiveColor;
+
 uniform float u_metallic;
 uniform float u_roughness;
 
@@ -105,6 +108,7 @@ void main() {
 	if (u_hasBaseColorTex) {
 		albedo *= texture(u_baseColorTex, TexCoord);
 	}
+	albedo.rgb *= u_tint;
 
 	float metallic = u_metallic;
 	float roughness = u_roughness;
@@ -213,7 +217,7 @@ void main() {
 
 	vec3 ambient = vec3(0.03) * albedo.rgb * (1.0 - metallic);
 	
-	vec3 emissive = vec3(0.0);
+	vec3 emissive = vec3(u_emissiveColor);
 	if (u_hasEmissiveTex) {
 		emissive = texture(u_emissiveTex, TexCoord).rgb;
 	}

@@ -68,6 +68,8 @@ void SceneSerializer::Load(const std::string& path, Scene& scene) {
 				c->localOffset.position = glm::vec3(collider["offset_position"][0], collider["offset_position"][1], collider["offset_position"][2]);
 				c->localOffset.rotation = glm::vec3(collider["offset_rotation"][0], collider["offset_rotation"][1], collider["offset_rotation"][2]);
 				if (collider["trigger"]) c->isTrigger = true;
+				c->friction = collider.value("friction", c->friction);
+				c->restitution = collider.value("restitution", c->restitution);
 				if (collider.contains("id"))
 					c->SetID(std::string(collider["id"]));
 			}

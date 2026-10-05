@@ -29,12 +29,13 @@ void Application::Run(Game& game) {
 
 	renderer.init();
 	debugRenderer.init();
+	uiRenderer.init(width, height);
 	Collision::init();
 	Input::Init(window.GetHandler());
 	
 	game.Start(width, height);
 	game.scene.Start();
-	while (!window.ShouldClose()) {
+	while (!window.ShouldClose() && !game.quitRequested) {
 		Time::Update();
 		float dt = Time::DeltaTime();	
 		if (dt > 0.1f) dt = 0.1f;	
@@ -43,16 +44,29 @@ void Application::Run(Game& game) {
 		window.PollEvents();	
 		if (Input::GetKeyDown(GLFW_KEY_Z)) debugRenderer.ToggleDebug();
 
-		glClearColor(0.529, 0.808f, 0.922f, 1.0f);
+		//follow the window when it's resized or maximized, a minimized window reports 0x0 so keep the old size
+		int framebufferWidth, framebufferHeight;
+		glfwGetFramebufferSize(window.GetHandler(), &framebufferWidth, &framebufferHeight);
+		if (framebufferWidth > 0 && framebufferHeight > 0 && (framebufferWidth != width || framebufferHeight != height)) {
+			width = framebufferWidth;
+			height = framebufferHeight;
+			glViewport(0, 0, width, height);
+			game.scene.GetMainCamera()->SetViewport(width, height);
+			uiRenderer.Resize(width, height);
+		}
+
+		glClearColor(game.clearColor.r, game.clearColor.g, game.clearColor.b, 1.0f);
 		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		game.Update(dt);
-		game.scene.Update(dt);
+		if (!game.paused) game.scene.Update(dt);
 		game.scene.Render(renderer);
 		if (debugRenderer.IsDebug()) {
 			game.scene.DebugRender(debugRenderer);
 		}
+		game.RenderUI(uiRenderer);
+		uiRenderer.Render();
 
 		glfwSwapBuffers(window.GetHandler());
 	}
