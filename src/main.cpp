@@ -275,6 +275,8 @@ public:
     void Start(float width, float height) override {
         
         serializer.Load("assets/level/level1.json", scene);
+        AssetManager::Get().LoadModel("assets/models/fireball.gltf");
+
         player = &scene.GetObject(2);
         player->AddComponent<PlayerController>(&scene.eventBus);
 

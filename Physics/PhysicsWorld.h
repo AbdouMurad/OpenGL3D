@@ -99,7 +99,6 @@ class PhysicsWorld {
 
 	EventBus& eventBus;
 public:
-	void DebugRender(DebugRenderer& renderer);
 	PhysicsWorld(EventBus&);
 
 	//change to 2 buffers later and instead of copying one to the other just change which is which

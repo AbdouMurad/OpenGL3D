@@ -38,7 +38,7 @@ Texture::Texture(const char* image, TextureType type, GLenum format, GLenum pixe
 	// glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, flatColor);
 
 	GLenum internalFormat = GL_RGBA;
-	if (type == TextureType::BaseColor) {
+	if (type == TextureType::BaseColor || type == TextureType::Emissive) {
 		internalFormat = GL_SRGB_ALPHA;
 	}
 	else if (type == TextureType::Normal) {
