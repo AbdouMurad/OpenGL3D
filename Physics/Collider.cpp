@@ -22,17 +22,35 @@ ColliderComponent::ColliderComponent(SHAPE s) {
 	}
 }
 void ColliderComponent::Start() {
-	SHAPE s = shape->GetType();
-	RigidBodyComponent* rb = GetRigidBody();
-	switch (s) {
-	case (SHAPE::Box):
-		if (rb) rb->SetLocalInertiaTensor(static_cast<Box*>(shape.get()));
-		break;
-	case (SHAPE::Sphere):
-		if (rb) rb->SetLocalInertiaTensor(static_cast<Sphere*>(shape.get()));
-		break;
-	case (SHAPE::Capsule):
-		//if (rb) rb->SetLocalInertiaTensor(static_cast<Capsule*>(shape.get()));
-		break;
+	NotifyRigidBody();
+}
+
+bool ColliderComponent::IsTrigger() const {
+	return isTrigger;
+}
+void ColliderComponent::SetTrigger(bool trigger) {
+	isTrigger = trigger;
+	NotifyRigidBody(); //triggers don't count towards inertia
+}
+void ColliderComponent::SetRadius(float radius) {
+	if (shape->GetType() != SHAPE::Sphere) {
+		std::cout << "SetRadius called on a non-sphere collider\n";
+		return;
 	}
+	static_cast<Sphere*>(shape.get())->radius = radius;
+	NotifyRigidBody();
+}
+void ColliderComponent::SetHalfExtent(const glm::vec3& halfExtent) {
+	if (shape->GetType() != SHAPE::Box) {
+		std::cout << "SetHalfExtent called on a non-box collider\n";
+		return;
+	}
+	static_cast<Box*>(shape.get())->halfExtent = halfExtent;
+	NotifyRigidBody();
+}
+
+//inertia depends on the collider's shape -> rigidbody must recompute whenever it changes
+void ColliderComponent::NotifyRigidBody() {
+	if (!owner) return; //not attached to an object yet, Start() will notify
+	if (RigidBodyComponent* rb = GetRigidBody()) rb->RecalculateInertia();
 }

@@ -87,15 +87,37 @@ struct PairHash {
 };
 
 
+//one solid contact, built once per step by collision detection
+//geometry + masses are fixed for the step -> only velocities change while the solver iterates
+struct Contact {
+	RigidBodyComponent* a = nullptr; //null or static -> immovable
+	RigidBodyComponent* b = nullptr;
+
+	glm::vec3 normal = glm::vec3(0); //points from a to b
+	glm::vec3 rA = glm::vec3(0);	 //contact point relative to each body's centre
+	glm::vec3 rB = glm::vec3(0);
+	float penetration = 0.0f;
+
+	float inverseMassA = 0.0f;
+	float inverseMassB = 0.0f;
+	glm::mat3 inverseInertiaA = glm::mat3(0); //world space, rotation locks applied
+	glm::mat3 inverseInertiaB = glm::mat3(0);
+
+	float normalDenominator = 0.0f; //inverse masses + rotational terms along the normal
+};
+
 class PhysicsWorld {
 	void Integrate(RigidBodyComponent* body, float dt);
 	void BuildBroad();
 	void BroadPhase();
-	void CollisionCheck();
-	void HandleCollision(Result& result);
-	void ResolveCollision(RigidBodyComponent*, RigidBodyComponent*, Result& result);
+	void DetectContacts();
+	bool BuildContact(const Result& result, Contact& contact);
+	void SolveContact(Contact& contact);
+	void CorrectPosition(const Contact& contact);
 	void UpdateTrigger();
-	
+
+	std::vector<Contact> contacts;
+
 
 	EventBus& eventBus;
 public:

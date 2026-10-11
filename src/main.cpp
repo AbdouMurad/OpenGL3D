@@ -96,8 +96,7 @@ public:
         RigidBodyComponent* floorRB = floor.AddComponent<RigidBodyComponent>();
         floorRB->ToggleStatic();
         ColliderComponent* floorCollider = floor.AddComponent<ColliderComponent>(SHAPE::Box);
-        Box* floorShape = static_cast<Box*>(floorCollider->shape.get());
-        floorShape->halfExtent = glm::vec3(7.5, 0.5f, 7.5);
+        floorCollider->SetHalfExtent(glm::vec3(7.5, 0.5f, 7.5));
 
 
         player = &scene.CreateObject();
@@ -110,10 +109,9 @@ public:
         ColliderComponent* playerCollider = player->AddComponent<ColliderComponent>(SHAPE::Box);
         player->AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/cube.gltf"));
         player->AddComponent<PlayerController>(&scene.eventBus);
-        trigger->isTrigger = true;
+        trigger->SetTrigger(true);
         trigger->localOffset.position = glm::vec3(0, -0.5f, 0);
-        Box* triggerShape = static_cast<Box*>(trigger->shape.get());
-        triggerShape->halfExtent = glm::vec3(0.25f, 0.125, 0.25f);
+        trigger->SetHalfExtent(glm::vec3(0.25f, 0.125, 0.25f));
         player->GetComponent<TransformComponent>()->SetPosition({ 0,3,0 });
 
         //GameObject& box1 = scene.CreateObject();
@@ -153,8 +151,7 @@ public:
             RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
             rb->SetMass(2);
             ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
-            Sphere* ballShape = static_cast<Sphere*>(c->shape.get());
-            ballShape->radius = 0.15f;
+            c->SetRadius(0.15f);
 
             TransformComponent* transform = player->GetComponent<TransformComponent>();
             rb->AddImpulse(transform->Forward() * (75.0f * rb->GetMass()));
@@ -198,8 +195,7 @@ public:
         floor.AddComponent<RigidBodyComponent>();
         floor.GetComponent<RigidBodyComponent>()->ToggleStatic();
         floor.AddComponent<ColliderComponent>(SHAPE::Box);
-        Box* floorCollider = static_cast<Box*>(floor.GetComponent<ColliderComponent>()->shape.get());
-        floorCollider->halfExtent = glm::vec3(7.5f, 0.05f, 7.5f);
+        floor.GetComponent<ColliderComponent>()->SetHalfExtent(glm::vec3(7.5f, 0.05f, 7.5f));
 
         GameObject& ceiling = scene.CreateObject();
         ceiling.GetComponent<TransformComponent>()->SetPosition({ 0,10,0 });
@@ -207,8 +203,7 @@ public:
         ceiling.AddComponent<RigidBodyComponent>();
         ceiling.GetComponent<RigidBodyComponent>()->ToggleStatic();
         ceiling.AddComponent<ColliderComponent>(SHAPE::Box);
-        Box* ceilingCollider = static_cast<Box*>(ceiling.GetComponent<ColliderComponent>()->shape.get());
-        ceilingCollider->halfExtent = glm::vec3(7.5f, 0.05f, 7.5f);
+        ceiling.GetComponent<ColliderComponent>()->SetHalfExtent(glm::vec3(7.5f, 0.05f, 7.5f));
 
         GameObject& wall = scene.CreateObject();
         wall.GetComponent<TransformComponent>()->SetPosition({ -7.5f, 2.5f, 0});
@@ -217,8 +212,7 @@ public:
         wall.AddComponent<RigidBodyComponent>();
         wall.GetComponent<RigidBodyComponent>()->ToggleStatic();
         wall.AddComponent<ColliderComponent>(SHAPE::Box);
-        Box* wallCollider1 = static_cast<Box*>(wall.GetComponent<ColliderComponent>()->shape.get());
-        wallCollider1->halfExtent = glm::vec3(0.05f, 7.5f, 7.5f);
+        wall.GetComponent<ColliderComponent>()->SetHalfExtent(glm::vec3(0.05f, 7.5f, 7.5f));
 
         GameObject& wall2 = scene.CreateObject();
         wall2.GetComponent<TransformComponent>()->SetPosition({ 0, 2.5f, -7.5f });
@@ -227,8 +221,7 @@ public:
         wall2.AddComponent<RigidBodyComponent>();
         wall2.GetComponent<RigidBodyComponent>()->ToggleStatic();
         wall2.AddComponent<ColliderComponent>(SHAPE::Box);
-        Box* wallCollider2 = static_cast<Box*>(wall2.GetComponent<ColliderComponent>()->shape.get());
-        wallCollider2->halfExtent = glm::vec3(7.5f, 7.5f, 0.05f);
+        wall2.GetComponent<ColliderComponent>()->SetHalfExtent(glm::vec3(7.5f, 7.5f, 0.05f));
 
         GameObject& wall4 = scene.CreateObject();
         wall4.GetComponent<TransformComponent>()->SetPosition({ 0, 2.5f, 7.5f });
@@ -236,8 +229,7 @@ public:
         wall4.AddComponent<RigidBodyComponent>();
         wall4.GetComponent<RigidBodyComponent>()->ToggleStatic();
         wall4.AddComponent<ColliderComponent>(SHAPE::Box);
-        Box* wallCollider4 = static_cast<Box*>(wall4.GetComponent<ColliderComponent>()->shape.get());
-        wallCollider4->halfExtent = glm::vec3(7.5f, 7.5f, 0.05f);
+        wall4.GetComponent<ColliderComponent>()->SetHalfExtent(glm::vec3(7.5f, 7.5f, 0.05f));
 
         GameObject& wall3 = scene.CreateObject();
         wall3.GetComponent<TransformComponent>()->SetPosition({ 7.5f, 2.5f, 0 });
@@ -246,8 +238,7 @@ public:
         wall3.AddComponent<RigidBodyComponent>();
         wall3.GetComponent<RigidBodyComponent>()->ToggleStatic();
         wall3.AddComponent<ColliderComponent>(SHAPE::Box);
-        Box* wallCollider3 = static_cast<Box*>(wall3.GetComponent<ColliderComponent>()->shape.get());
-        wallCollider3->halfExtent = glm::vec3(0.05f, 7.5f, 7.5f);
+        wall3.GetComponent<ColliderComponent>()->SetHalfExtent(glm::vec3(0.05f, 7.5f, 7.5f));
 
         GameObject& camera = scene.CreateObject();
         camera.AddComponent<CameraComponent>(width, height);
@@ -293,8 +284,7 @@ public:
             RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
             rb->SetMass(5);
             ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
-            Sphere* ballShape = static_cast<Sphere*>(c->shape.get());
-            ballShape->radius = 0.15f;
+            c->SetRadius(0.15f);
 
             TransformComponent* transform = player->GetComponent<TransformComponent>();
             rb->AddImpulse(transform->Forward() * (50.0f * rb->GetMass()));

@@ -20,9 +20,19 @@ public:
 
 	glm::mat4 GetMatrix() const;
 
-	bool isTrigger = false;
+	bool IsTrigger() const;
+
+	//setters notify the rigidbody so its inertia stays in sync with the shape
+	void SetTrigger(bool trigger);
+	void SetRadius(float radius);					//sphere only
+	void SetHalfExtent(const glm::vec3& halfExtent);	//box only
 
 	void Start() override;
 
 	RigidBodyComponent* GetRigidBody();
+
+private:
+	bool isTrigger = false;
+
+	void NotifyRigidBody();
 };

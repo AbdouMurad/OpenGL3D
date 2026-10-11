@@ -54,20 +54,18 @@ void SceneSerializer::Load(const std::string& path, Scene& scene) {
 				ColliderComponent* c = nullptr;
 				if (collider["type"] == "box") {
 					c = obj.AddComponent<ColliderComponent>(SHAPE::Box);
-					Box* colliderShape = static_cast<Box*>(c->shape.get());
 					glm::vec3 extent = { collider["extent"][0], collider["extent"][1], collider["extent"][2] };
-					colliderShape->halfExtent = extent / 2.0f;
+					c->SetHalfExtent(extent / 2.0f);
 				}
 				else if (collider["type"] == "sphere") {
 					c = obj.AddComponent<ColliderComponent>(SHAPE::Sphere);
-					Sphere* colliderShape = static_cast<Sphere*>(c->shape.get());
-					colliderShape->radius = collider["radius"];
+					c->SetRadius(collider["radius"].get<float>());
 				}
 				//TODO: Capsule
 
 				c->localOffset.position = glm::vec3(collider["offset_position"][0], collider["offset_position"][1], collider["offset_position"][2]);
 				c->localOffset.rotation = glm::vec3(collider["offset_rotation"][0], collider["offset_rotation"][1], collider["offset_rotation"][2]);
-				if (collider["trigger"]) c->isTrigger = true;
+				if (collider["trigger"]) c->SetTrigger(true);
 				if (collider.contains("id"))
 					c->SetID(std::string(collider["id"]));
 			}

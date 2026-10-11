@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+class ColliderComponent;
+
 enum class SHAPE {
 	Sphere = 0, Box, Capsule, SIZE
 };
@@ -16,18 +18,26 @@ struct Sphere : public ColliderShape {
 	Sphere() = default;
 	Sphere(float radius);
 
-	float radius = 0.5f;
+	float GetRadius() const { return radius; }
 
 	SHAPE GetType() const override;
+private:
+	//only editable through ColliderComponent::SetRadius -> keeps rigidbody inertia in sync
+	friend class ColliderComponent;
+	float radius = 0.5f;
 };
 
 struct Box : public ColliderShape {
 	Box() = default;
 	Box(const glm::vec3& halfSize);
 
-	glm::vec3 halfExtent = glm::vec3(0.5);
+	const glm::vec3& GetHalfExtent() const { return halfExtent; }
 
 	SHAPE GetType() const override;
+private:
+	//only editable through ColliderComponent::SetHalfExtent -> keeps rigidbody inertia in sync
+	friend class ColliderComponent;
+	glm::vec3 halfExtent = glm::vec3(0.5);
 };
 
 struct Capsule : public ColliderShape {

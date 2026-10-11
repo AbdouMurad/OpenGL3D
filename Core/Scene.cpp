@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "Render/DebugRender.h"
 #include <cmath>
+#include <algorithm>
 
 GameObject& Scene::CreateObject() {
 	std::unique_ptr<GameObject> object = std::make_unique<GameObject>();
@@ -65,11 +66,14 @@ void Scene::Update(float dt) {
 	}
 
 	const float maxPhysicsStep = 1.0f / 120.0f;
+	//cap -> a slow frame can't request more steps, which would make the next frame slower (spiral)
+	//past the cap physics runs slower than real time instead of taking bigger, less stable steps
+	const int maxSubSteps = 4;
 	int subSteps = static_cast<int>(std::ceil(dt / maxPhysicsStep));
 	if (subSteps < 1) subSteps = 1;
-	if (subSteps > 8) subSteps = 8;
+	if (subSteps > maxSubSteps) subSteps = maxSubSteps;
 
-	const float stepDt = dt / static_cast<float>(subSteps);
+	const float stepDt = std::min(dt / static_cast<float>(subSteps), maxPhysicsStep);
 	for (int i = 0; i < subSteps; ++i) {
 		physics.Step(stepDt);
 	}
@@ -87,11 +91,11 @@ void Scene::DebugRender(DebugRenderer& renderer) {
 					glm::normalize(mat[1]),
 					glm::normalize(mat[2])
 				};
-				renderer.DrawBox(mat[3], axes, shape->halfExtent);
+				renderer.DrawBox(mat[3], axes, shape->GetHalfExtent());
 			}
 			if (collider->shape.get()->GetType() == SHAPE::Sphere) {
 				glm::mat4 mat = collider->GetMatrix();
-				renderer.DrawSphere(mat[3], static_cast<Sphere*>(collider->shape.get())->radius);
+				renderer.DrawSphere(mat[3], static_cast<Sphere*>(collider->shape.get())->GetRadius());
 			}
 		}
 	}
