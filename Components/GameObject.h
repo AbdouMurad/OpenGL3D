@@ -7,9 +7,11 @@
 #include <glm/gtx/quaternion.hpp> 
 #include <cmath>
 #include <iostream>
+#include <type_traits>
 #include "Core/Handlers.h"
 
 class GameObject;
+class RigidBodyComponent;
 
 class Component {
 protected:
@@ -96,7 +98,12 @@ class GameObject {
 	ObjectHandle ID;
 	std::vector<std::unique_ptr<Component>> components;
 
-public: 
+	//hot components cached on add so GetComponent doesn't dynamic_cast scan for them
+	//(components are never removed, so these can't go stale)
+	TransformComponent* transform = nullptr;
+	RigidBodyComponent* rigidBody = nullptr;
+
+public:
 	ObjectHandle GetID() const {
 		return ID;
 	}
@@ -114,18 +121,30 @@ public:
 
 		components.push_back(std::move(component));
 
+		//first one wins, same as GetComponent's scan order
+		if constexpr (std::is_same_v<T, TransformComponent>) {
+			if (!transform) transform = ptr;
+		}
+		else if constexpr (std::is_same_v<T, RigidBodyComponent>) {
+			if (!rigidBody) rigidBody = ptr;
+		}
+
 		ptr->Start();
 
 		return ptr;
 	}
 	template<typename T>
 	T* GetComponent() {
-		for (auto& component : components) {
-			if (auto cast = dynamic_cast<T*>(component.get()))
-				return cast;
+		if constexpr (std::is_same_v<T, TransformComponent>) return transform;
+		else if constexpr (std::is_same_v<T, RigidBodyComponent>) return rigidBody;
+		else {
+			for (auto& component : components) {
+				if (auto cast = dynamic_cast<T*>(component.get()))
+					return cast;
+			}
+			return nullptr;
 		}
-		return nullptr;
-	} 
+	}
 
 	template<typename T>
 	T* GetComponent(const std::string& s) {

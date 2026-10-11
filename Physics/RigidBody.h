@@ -51,12 +51,15 @@ public:
     float GetMass() const;
     float GetInverseMass() const;
 
-    void SetLocalInertiaTensor(const Box* box);
-    void SetLocalInertiaTensor(const Sphere* sphere);
-    //void SetLocalInertiaTensor(const Capsule& capsule);
+    //rebuilds inertia from the mass + first non-trigger collider (called automatically on mass/collider changes)
+    void RecalculateInertia();
+
+    void Start() override;
 
     const glm::mat3& GetLocalInertiaTensor() const;
     const glm::mat3& GetInverseLocalInertiaTensor() const;
+    //world space, with locked rotation axes removed (what the collision solver should use)
+    glm::mat3 GetInverseInertiaWorld() const;
 
     void SetMass(float mass);
 
@@ -69,10 +72,14 @@ public:
     void AddConstraint(RigidBodyConstraints c);
     //void RemoveConstraint(RigidBodyConstraints c);
     void SetConstraint(RigidBodyConstraints c);
-    bool IsRotationLocked(int i);
+    bool IsRotationLocked(int i) const;
 
 private:
     friend class PhysicsWorld;
+
+    void SetLocalInertiaTensor(const Box* box);
+    void SetLocalInertiaTensor(const Sphere* sphere);
+    //void SetLocalInertiaTensor(const Capsule& capsule);
 
     RigidBodyConstraints constraints = RigidBodyConstraints::None;
 
@@ -93,4 +100,5 @@ private:
 
     bool isStatic = false;
     bool useGravity = true;
+    bool inContact = false; //touched a non-trigger collider this physics step
 };
