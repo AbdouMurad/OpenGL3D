@@ -32,6 +32,7 @@ public:
 	CameraComponent* GetMainCamera();
 
 	void Start();
+	void Clear();
 	void Update(float dt);
 	void Render(Renderer& renderer);
 	void DebugRender(DebugRenderer& renderer);

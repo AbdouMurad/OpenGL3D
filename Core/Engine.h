@@ -28,6 +28,7 @@ public:
 	void Run(Game& game);
 
 private:
+	void startGame(Game& game);
 	void shutdown();
 
 	std::string name;

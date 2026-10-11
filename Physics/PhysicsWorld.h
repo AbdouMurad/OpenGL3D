@@ -111,4 +111,5 @@ public:
 	std::vector<ColliderComponent*> colliders;
 	glm::vec3 gravity = glm::vec3(0, -9.81, 0);
 	void Step(float dt);
+	void Clear();
 };

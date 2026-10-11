@@ -9,7 +9,10 @@ void Application::Run(Game& game) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	window.Init(width, height, name, false);
+	window.Init(width, height, name, true);
+	//fullscreen uses the monitor's resolution, not the requested one
+	width = window.GetWindowWidth();
+	height = window.GetWindowHeight();
 
 	gladLoadGL();
 	glEnable(GL_DEPTH_TEST);
@@ -31,9 +34,9 @@ void Application::Run(Game& game) {
 	debugRenderer.init();
 	Collision::init();
 	Input::Init(window.GetHandler());
-	
-	game.Start(width, height);
-	game.scene.Start();
+	Input::SetCursorLocked(true);
+
+	startGame(game);
 	while (!window.ShouldClose()) {
 		Time::Update();
 		float dt = Time::DeltaTime();	
@@ -42,6 +45,11 @@ void Application::Run(Game& game) {
 		Input::Update();
 		window.PollEvents();	
 		if (Input::GetKeyDown(GLFW_KEY_Z)) debugRenderer.ToggleDebug();
+		if (Input::GetKeyDown(GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window.GetHandler(), GLFW_TRUE);
+		if ((Input::GetKey(GLFW_KEY_LEFT_CONTROL) || Input::GetKey(GLFW_KEY_RIGHT_CONTROL)) && Input::GetKeyDown(GLFW_KEY_R)) {
+			startGame(game);
+			continue;
+		}
 
 		//glClearColor(0.529, 0.808f, 0.922f, 1.0f);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -59,6 +67,13 @@ void Application::Run(Game& game) {
 	
 	game.Shutdown();
 	shutdown();
+}
+
+//(Re)builds the game's scene. Safe to call again at runtime to reset the game.
+void Application::startGame(Game& game) {
+	game.scene.Clear();
+	game.Start(width, height);
+	game.scene.Start();
 }
 
 void Application::shutdown() {
