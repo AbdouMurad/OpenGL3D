@@ -499,17 +499,13 @@ bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& resul
 			result.point = (FurthestPoint(boxA, result.normal) + FurthestPoint(boxB, -result.normal)) * 0.5f;
 		}
 		else {
-			glm::vec3 center = (boxA.center + boxB.center) * 0.5f;
-			float bestArmSq = -1.0f;
-			glm::vec3 bestPoint = contacts[0];
+			//average of the manifold -> centre of the touching area
+			//resting flat it's the face centre (no torque), on an edge it's the edge midpoint, on a corner it's the corner
+			glm::vec3 average(0.0f);
 			for (const glm::vec3& p : contacts) {
-				float armSq = glm::length2(glm::cross(p - center, result.normal));
-				if (armSq > bestArmSq) {
-					bestArmSq = armSq;
-					bestPoint = p;
-				}
+				average += p;
 			}
-			result.point = bestPoint;
+			result.point = average / static_cast<float>(contacts.size());
 		}
 	}
 	else {
@@ -593,6 +589,16 @@ void PhysicsWorld::BroadPhase() {
 			}
 		}
 	}
+}
+
+//drops all pointers to bodies/colliders (they dangle once the owning objects are destroyed)
+void PhysicsWorld::Clear() {
+	bodies.clear();
+	colliders.clear();
+	broadPhase.clear();
+	triggerBuffer1.clear();
+	triggerBuffer2.clear();
+	triggerBufferSwitch = false;
 }
 
 void PhysicsWorld::Step(float dt) {
@@ -799,8 +805,4 @@ void PhysicsWorld::Integrate(RigidBodyComponent* body, float dt) {
 		transform->Rotate(deltaRotation);
 
 	}
-}
-
-void PhysicsWorld::DebugRender(DebugRenderer& renderer) {
-
 }

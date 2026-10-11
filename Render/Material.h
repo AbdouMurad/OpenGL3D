@@ -15,6 +15,8 @@ struct MaterialProperties {
 	float metallic = 1.0f;
 	float roughness = 1.0f;
 	float normalScale = 1.0f;
+	glm::vec3 emissiveFactor = glm::vec3(0.0f);
+	float emissiveStrength = 1.0f; //KHR_materials_emissive_strength
 };
 struct Material {
 	uint32_t flags = MATERIAL_NONE;

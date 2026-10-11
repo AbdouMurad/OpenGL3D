@@ -32,6 +32,10 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 
 		//Maybe move this into a function that takes in a material reference?
 		shader.setVec4("u_baseColor", material.properties.baseColor);
+		shader.setFloat("u_metallic", material.properties.metallic);
+		shader.setFloat("u_roughness", material.properties.roughness);
+		shader.setFloat("u_normalScale", material.properties.normalScale);
+		shader.setVec3("u_emissiveFactor", material.properties.emissiveFactor * material.properties.emissiveStrength);
 		if (material.textures.baseColor) {
 			shader.setInt("u_hasBaseColorTex", 1);
 			shader.setInt("u_baseColorTex", BASE_COLOR_SLOT);
@@ -42,13 +46,13 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 			shader.setInt("u_hasBaseColorTex", 0);
 		}
 		if (material.textures.normal) {
-			shader.setInt("u_hasNormalMap", 1);
+			shader.setInt("u_hasNormalTex", 1);
 			shader.setInt("u_normalTex", NORMAL_SLOT);
 			Texture& normalMapTex = AssetManager::Get().GetTexture(material.textures.normal);
 			normalMapTex.Bind(NORMAL_SLOT);
 		}
 		else {
-			shader.setInt("u_hasNormalMap", 0);
+			shader.setInt("u_hasNormalTex", 0);
 		}
 		if (material.textures.metallicRoughness) {
 			shader.setInt("u_hasMetallicRoughnessTex", 1);
@@ -60,13 +64,13 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 			shader.setInt("u_hasMetallicRoughnessTex", 0);
 		}
 		if (material.textures.emissive) {
-			shader.setInt("u_hasEmissiveText", 1);
+			shader.setInt("u_hasEmissiveTex", 1);
 			shader.setInt("u_emissiveTex", EMISSIVE_SLOT);
 			Texture& emissiveTex = AssetManager::Get().GetTexture(material.textures.emissive);
 			emissiveTex.Bind(EMISSIVE_SLOT);
 		}
 		else {
-			shader.setInt("u_hasEmissiveText", 0);
+			shader.setInt("u_hasEmissiveTex", 0);
 		}
 
 

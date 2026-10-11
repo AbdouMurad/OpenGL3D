@@ -34,6 +34,11 @@ public:
 		);
 	}
 
+	//drops every subscription (handlers hold raw pointers to their subscribers)
+	void Clear() {
+		handlers.clear();
+	}
+
 	template<typename Event>
 	void Emit(const Event& event) {
 		auto it = handlers.find(typeid(event));

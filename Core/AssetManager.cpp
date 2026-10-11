@@ -29,6 +29,16 @@ static std::string DecodeURI(const std::string& uri) {
 	return result;
 }
 
+//textureRef is a glTF textureInfo object -> { "index": n, ... }
+static TextureHandle LoadMaterialTexture(const json& textureRef, TextureType type, GLTFData& data, const std::filesystem::path& gltfDirectory) {
+	int textureIndex = textureRef["index"];
+	int imageIndex = data.textures[textureIndex]["source"];
+	std::string imageURI = data.images[imageIndex]["uri"];
+
+	std::filesystem::path texturePath = gltfDirectory / imageURI;
+	return AssetManager::Get().LoadTexture(texturePath.string(), type);
+}
+
 static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::filesystem::path& gltfDirectory) {
 	//Depending on what data is available about the mesh -> build material
 	const json& gltfMaterial = data.materials[index];
@@ -50,69 +60,35 @@ static MaterialHandle LoadGLTFMaterial(int index, GLTFData& data, const std::fil
 			material.properties.roughness = pbr["roughnessFactor"];
 		}
 		if (pbr.contains("metallicRoughnessTexture")) {
-			int textureIndex = pbr["metallicRoughnessTexture"]["index"];
-
-			const json& texture = data.textures[textureIndex];
-
-			int imageIndex = texture["source"];
-			const json& image = data.images[imageIndex];
-
-			std::string imageURI = image["uri"];
-
-			std::filesystem::path texturePath =
-				gltfDirectory / imageURI;
-
-			material.textures.metallicRoughness =
-				AssetManager::Get().LoadTexture(
-					texturePath.string(),
-					TextureType::MetallicRoughness
-				);
+			material.textures.metallicRoughness = LoadMaterialTexture(pbr["metallicRoughnessTexture"], TextureType::MetallicRoughness, data, gltfDirectory);
 			material.flags |= MATERIAL_METALLIC_ROUGHNESS;
 		}
 		if (pbr.contains("baseColorTexture")) {
-			int textureIndex = pbr["baseColorTexture"]["index"];
-
-			const json& texture = data.textures[textureIndex];
-
-			int imageIndex = texture["source"];
-
-			const json& image = data.images[imageIndex];
-
-			std::string imageURI = image["uri"];
-
-			std::filesystem::path texturePath =
-				gltfDirectory / imageURI;
-
-			material.textures.baseColor =
-				AssetManager::Get().LoadTexture(
-					texturePath.string(),
-					TextureType::BaseColor
-				);
+			material.textures.baseColor = LoadMaterialTexture(pbr["baseColorTexture"], TextureType::BaseColor, data, gltfDirectory);
 			material.flags |= MATERIAL_BASE_COLOR_TEXTURE;
 		}
+
 	}
 	if (gltfMaterial.contains("normalTexture")) {
-		int textureIndex = gltfMaterial["normalTexture"]["index"];
-
-		const json& texture = data.textures[textureIndex];
-
-		int imageIndex = texture["source"];
-
-		const json& image = data.images[imageIndex];
-
-		std::string imageURI = image["uri"];
-
-		std::filesystem::path texturePath = gltfDirectory / imageURI;
-
-		material.textures.normal = AssetManager::Get().LoadTexture(
-			texturePath.string(),
-			TextureType::Normal
-		);
+		material.textures.normal = LoadMaterialTexture(gltfMaterial["normalTexture"], TextureType::Normal, data, gltfDirectory);
 		material.flags |= MATERIAL_NORMAL_MAP;
 
 		if (gltfMaterial["normalTexture"].contains("scale")) {
 			material.properties.normalScale = gltfMaterial["normalTexture"]["scale"];
 		}
+	}
+	//emissive lives on the material itself, not inside pbrMetallicRoughness
+	if (gltfMaterial.contains("emissiveFactor")) {
+		auto& e = gltfMaterial["emissiveFactor"];
+
+		material.properties.emissiveFactor = glm::vec3(e[0], e[1], e[2]);
+	}
+	if (gltfMaterial.contains("emissiveTexture")) {
+		material.textures.emissive = LoadMaterialTexture(gltfMaterial["emissiveTexture"], TextureType::Emissive, data, gltfDirectory);
+		material.flags |= MATERIAL_EMISSIVE;
+	}
+	if (gltfMaterial.contains("extensions") && gltfMaterial["extensions"].contains("KHR_materials_emissive_strength")) {
+		material.properties.emissiveStrength = gltfMaterial["extensions"]["KHR_materials_emissive_strength"].value("emissiveStrength", 1.0f);
 	}
 
 	return AssetManager::Get().CreateMaterial(material);

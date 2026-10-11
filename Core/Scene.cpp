@@ -49,6 +49,15 @@ void Scene::Start() {
 	}
 	dirtyScene = false;
 }
+//Removes everything so the scene can be rebuilt from scratch (physics first, it holds pointers into the objects)
+void Scene::Clear() {
+	physics.Clear();
+	eventBus.Clear();
+	objects.clear();
+	mainCamera = nullptr;
+	nextID = 1;
+	dirtyScene = false;
+}
 void Scene::Update(float dt) {
 	if (dirtyScene) Start();
 	for (std::unique_ptr<GameObject>& object : objects) {
@@ -86,7 +95,7 @@ void Scene::DebugRender(DebugRenderer& renderer) {
 			}
 		}
 	}
-	physics.DebugRender(renderer);
+	//physics.DebugRender(renderer);
 	renderer.Render(GetMainCamera()->cameraMatrix);
 }
 

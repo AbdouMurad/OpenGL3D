@@ -26,6 +26,7 @@ uniform bool u_hasNormalTex;
 uniform sampler2D u_normalTex;
 uniform float u_normalScale;
 
+uniform vec3 u_emissiveFactor;
 uniform bool u_hasEmissiveTex;
 uniform sampler2D u_emissiveTex;
 
@@ -213,9 +214,10 @@ void main() {
 
 	vec3 ambient = vec3(0.03) * albedo.rgb * (1.0 - metallic);
 	
-	vec3 emissive = vec3(0.0);
+	//glTF: emissive = factor * texture (factor defaults to black)
+	vec3 emissive = u_emissiveFactor;
 	if (u_hasEmissiveTex) {
-		emissive = texture(u_emissiveTex, TexCoord).rgb;
+		emissive *= texture(u_emissiveTex, TexCoord).rgb;
 	}
 
 	
