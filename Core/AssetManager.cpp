@@ -139,6 +139,17 @@ static void LoadNode(Node& node, int nodeIndex, GLTFData& data, const std::vecto
 	}
 }
 
+//merges every mesh's box, moved by its node's accumulated transform (same order the renderer draws with)
+static void AccumulateBounds(const Node& node, const glm::mat4& parentMatrix, BoundingBox& bounds) {
+	glm::mat4 worldMatrix = parentMatrix * node.localTransformComponent.GetLocalMatrix();
+	for (const Primitive& primitive : node.primitives) {
+		bounds.Expand(AssetManager::Get().GetMesh(primitive.mesh).bounds.Transformed(worldMatrix));
+	}
+	for (const auto& child : node.children) {
+		AccumulateBounds(*child, worldMatrix, bounds);
+	}
+}
+
 AccessorView GetAccessor(GLTFData& data, int accessorIndex) {
 	const json& accessor = data.accessors[accessorIndex];
 
@@ -438,6 +449,7 @@ static Model* loadGLTF(const std::string& filePath) {
 		LoadNode(*child, rootNodeIndex, data, meshMap);
 		model->root.children.push_back(std::move(child));
 	}
+	AccumulateBounds(model->root, glm::mat4(1.0f), model->bounds);
 
 	//return constrctued model
 	return model;

@@ -63,6 +63,14 @@ public:
 
     void SetMass(float mass);
 
+    //bounciness 0 (no bounce) .. 1 (keeps all its speed). a contact uses the larger of the two bodies' values
+    float GetRestitution() const;
+    void SetRestitution(float restitution);
+
+    //grip against sliding, 0 = ice, ~0.5 = wood, >1 = very grippy. a contact uses sqrt(a * b) of the two bodies
+    float GetFriction() const;
+    void SetFriction(float friction);
+
     bool IsStatic() const;
     bool UseGravity() const;
     void ToggleStatic();
@@ -73,6 +81,8 @@ public:
     //void RemoveConstraint(RigidBodyConstraints c);
     void SetConstraint(RigidBodyConstraints c);
     bool IsRotationLocked(int i) const;
+    //all 3 axes locked -> physics skips every rotation calculation for this body (torque, inertia, spin)
+    bool IsRotationFrozen() const;
 
 private:
     friend class PhysicsWorld;
@@ -100,5 +110,9 @@ private:
 
     bool isStatic = false;
     bool useGravity = true;
+    float restitution = 0.0f;
+    float friction = 0.5f;
+
     bool inContact = false; //touched a non-trigger collider this physics step
+    float restTimer = 0.0f; //how long it's been nearly still while touching something (seconds)
 };

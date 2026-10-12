@@ -28,6 +28,8 @@ add_executable(OpenGL3D
     Render/stb.cpp
     Render/DebugRender.h 
     Render/DebugRender.cpp
+    Render/Frustum.h
+    Render/Frustum.cpp
 
     Core/Engine.cpp
     Core/Input.cpp

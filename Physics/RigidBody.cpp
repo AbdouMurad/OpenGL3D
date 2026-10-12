@@ -49,6 +49,18 @@ void RigidBodyComponent::SetMass(float m) {
 	inverseMass = 1.0f / m;
 	RecalculateInertia();
 }
+float RigidBodyComponent::GetRestitution() const {
+	return restitution;
+}
+void RigidBodyComponent::SetRestitution(float r) {
+	restitution = glm::clamp(r, 0.0f, 1.0f); //above 1 would add energy on every bounce
+}
+float RigidBodyComponent::GetFriction() const {
+	return friction;
+}
+void RigidBodyComponent::SetFriction(float f) {
+	friction = glm::max(f, 0.0f); //negative friction would push sliding bodies faster
+}
 bool RigidBodyComponent::IsStatic() const {
 	return isStatic;
 }
@@ -69,6 +81,7 @@ void RigidBodyComponent::RecalculateInertia() {
 	localInertiaTensor = glm::mat3(0);
 	inverseLocalInertiaTensor = glm::mat3(0); //no solid collider -> body can't rotate
 	if (!owner) return; //not attached yet, Start() will recalculate
+	if (IsRotationFrozen()) return; //never rotates -> no tensor needed (unlocking recalculates)
 
 	//uses the first solid collider (triggers have no mass)
 	for (ColliderComponent* collider : owner->GetComponents<ColliderComponent>()) {
@@ -118,6 +131,7 @@ const glm::mat3& RigidBodyComponent::GetInverseLocalInertiaTensor() const {
 	return inverseLocalInertiaTensor;
 }
 glm::mat3 RigidBodyComponent::GetInverseInertiaWorld() const {
+	if (IsRotationFrozen()) return glm::mat3(0.0f); //skips the world matrix rebuild in GetQuat()
 	glm::mat3 R = glm::mat3_cast(owner->GetComponent<TransformComponent>()->GetQuat());
 	glm::mat3 inverseInertiaWorld = R * inverseLocalInertiaTensor * glm::transpose(R);
 
@@ -129,11 +143,18 @@ glm::mat3 RigidBodyComponent::GetInverseInertiaWorld() const {
 	}
 	return mask * inverseInertiaWorld * mask;
 }
+//constraints decide whether an inertia tensor is needed -> recalculate on change (e.g. unlocking a frozen body)
 void RigidBodyComponent::SetConstraint(RigidBodyConstraints c) {
 	constraints = c;
+	RecalculateInertia();
 }
 void RigidBodyComponent::AddConstraint(RigidBodyConstraints c) {
 	constraints = constraints | c;
+	RecalculateInertia();
+}
+bool RigidBodyComponent::IsRotationFrozen() const {
+	constexpr uint8_t all = static_cast<uint8_t>(RigidBodyConstraints::FreezeRotation);
+	return (static_cast<uint8_t>(constraints) & all) == all;
 }
 bool RigidBodyComponent::IsRotationLocked(int axis) const {
 	return (static_cast<uint8_t>(constraints) & (1 << axis)) != 0;

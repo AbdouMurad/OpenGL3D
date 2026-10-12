@@ -6,6 +6,7 @@
 #include "GPU/Buffer.h"
 #include "Components/GameObject.h"
 #include "Material.h"
+#include "Frustum.h"
 #include "Core/Handlers.h"
 
 
@@ -13,6 +14,8 @@ class Mesh {
 public:
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
+
+	BoundingBox bounds; //local space, from the vertices
 
 	VAO VAO;
 	EBO ebo;
@@ -44,4 +47,5 @@ struct Node {
 class Model {
 public:
 	Node root;
+	BoundingBox bounds; //model space, every mesh through its node transforms (used for culling)
 };

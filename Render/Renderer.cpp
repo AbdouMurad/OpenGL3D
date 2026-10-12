@@ -8,8 +8,21 @@ bool Renderer::init() {
 
 void Renderer::Render(RenderFrame& frame) {
 	currentFrame = &frame;
-	for (RenderObject& object : currentFrame->renderObjects)
-		Renderer::DrawNode(&(AssetManager::Get().GetModel(object.modelID).root), object.transform);
+	stats = RenderStats();
+
+	Frustum frustum;
+	frustum.Extract(frame.cameraMatrix);
+
+	for (RenderObject& object : currentFrame->renderObjects) {
+		Model& model = AssetManager::Get().GetModel(object.modelID);
+		//skip before any uniforms/draw calls happen. models without bounds (no meshes) are never culled
+		if (model.bounds.IsValid() && !frustum.IsVisible(model.bounds.Transformed(object.transform))) {
+			++stats.objectsCulled;
+			continue;
+		}
+		++stats.objectsDrawn;
+		Renderer::DrawNode(&model.root, object.transform);
+	}
 	currentFrame = nullptr;
 }
 

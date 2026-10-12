@@ -37,6 +37,9 @@ void SceneSerializer::Load(const std::string& path, Scene& scene) {
 			rb->SetMass(rbData["mass"]);
 			if (rbData["static"]) rb->ToggleStatic();
 			if (!rbData["gravity"]) rb->ToggleGravity();
+			//optional, defaults stay when missing
+			if (rbData.contains("friction")) rb->SetFriction(rbData["friction"].get<float>());
+			if (rbData.contains("restitution")) rb->SetRestitution(rbData["restitution"].get<float>());
 			if (rbData.contains("constraints")) {
 				for (const std::string& constraint : rbData["constraints"]) {
 					if (constraint == "rotation_x")
