@@ -5,6 +5,9 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices)
 
 	Mesh::vertices = vertices;
 	Mesh::indices = indices;
+	for (const Vertex& vertex : vertices) {
+		bounds.Expand(vertex.position);
+	}
 	VAO.init();
 	VAO.Bind();
 

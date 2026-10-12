@@ -22,6 +22,7 @@ class Scene {
 
 	bool dirtyScene = false;
 	ObjectHandle nextID = 1;
+	float physicsAccumulator = 0.0f; //frame time not yet simulated (fixed timestep)
 public:
 	EventBus eventBus;
 	GameObject& GetObject(ObjectHandle id);

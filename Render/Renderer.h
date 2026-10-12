@@ -23,6 +23,11 @@ struct RenderFrame {
 	glm::vec3 cameraPosition = glm::vec3(0.0f);
 };
 
+struct RenderStats {
+	int objectsDrawn = 0;
+	int objectsCulled = 0; //outside the camera frustum
+};
+
 class Renderer {
 public:
 
@@ -30,8 +35,11 @@ public:
 	//void BeginFrame();
 	void Render(RenderFrame& frame);
 
+	const RenderStats& GetStats() const { return stats; } //last frame
+
 private:
 	RenderFrame* currentFrame = nullptr;
-	
+	RenderStats stats;
+
 	void DrawNode(Node* node, const glm::mat4& parentTransformComponent);
 };

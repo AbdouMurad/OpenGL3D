@@ -58,6 +58,7 @@ void Scene::Clear() {
 	mainCamera = nullptr;
 	nextID = 1;
 	dirtyScene = false;
+	physicsAccumulator = 0.0f;
 }
 void Scene::Update(float dt) {
 	if (dirtyScene) Start();
@@ -65,18 +66,22 @@ void Scene::Update(float dt) {
 		object->Update(dt);
 	}
 
-	const float maxPhysicsStep = 1.0f / 120.0f;
+	//fixed timestep: physics always advances in exact 1/120 s steps, whatever the frame rate
+	//-> damping, sleeping and position correction behave the same at 60 fps and 1000 fps
+	//frame time left over (less than a step) carries over to the next frame
+	constexpr float physicsStep = 1.0f / 120.0f;
 	//cap -> a slow frame can't request more steps, which would make the next frame slower (spiral)
-	//past the cap physics runs slower than real time instead of taking bigger, less stable steps
-	const int maxSubSteps = 4;
-	int subSteps = static_cast<int>(std::ceil(dt / maxPhysicsStep));
-	if (subSteps < 1) subSteps = 1;
-	if (subSteps > maxSubSteps) subSteps = maxSubSteps;
+	constexpr int maxStepsPerFrame = 4;
 
-	const float stepDt = std::min(dt / static_cast<float>(subSteps), maxPhysicsStep);
-	for (int i = 0; i < subSteps; ++i) {
-		physics.Step(stepDt);
+	physicsAccumulator += dt;
+	int steps = 0;
+	while (physicsAccumulator >= physicsStep && steps < maxStepsPerFrame) {
+		physics.Step(physicsStep);
+		physicsAccumulator -= physicsStep;
+		++steps;
 	}
+	//still behind after the cap -> drop the backlog, physics runs slower than real time instead of catching up
+	if (physicsAccumulator >= physicsStep) physicsAccumulator = 0.0f;
 }
 
 void Scene::DebugRender(DebugRenderer& renderer) {

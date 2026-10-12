@@ -36,15 +36,16 @@ bool Collision::SphereSphere(ColliderComponent& a, ColliderComponent& b, Result&
 	if (radiusSum * radiusSum >= glm::length2(delta)) {
 		r.a = &a;
 		r.b = &b;
+		float penetration;
 		if (glm::length2(delta) < 1e-6f) {
 			r.normal = glm::vec3(0, 1, 0);
-			r.penetration = radiusSum;
+			penetration = radiusSum;
 		}
 		else {
 			r.normal = glm::normalize(delta);
-			r.penetration = radiusSum - glm::length(delta);
+			penetration = radiusSum - glm::length(delta);
 		}
-		r.point = pointA + r.normal * sphereA->GetRadius();
+		r.AddPoint(pointA + r.normal * sphereA->GetRadius(), penetration);
 		return true;
 	}
 	return false;
@@ -94,24 +95,24 @@ bool Collision::BoxSphere(ColliderComponent& a, ColliderComponent& b, Result& re
 			float dy = box.halfExtent.y - abs(y);
 			float dz = box.halfExtent.z - abs(z);
 
+			float penetration;
 			if (dx <= dy && dx <= dz) {
 				result.normal = (x >= 0.0f) ? box.right : -box.right;
-				result.penetration = radius + dx;
+				penetration = radius + dx;
 			}
 			else if (dy <= dz) {
 				result.normal = (y >= 0.0f) ? box.up : -box.up;
-				result.penetration = radius + dy;
+				penetration = radius + dy;
 			}
 			else {
 				result.normal = (z >= 0.0f) ? box.forward : -box.forward;
-				result.penetration = radius + dz;
+				penetration = radius + dz;
 			}
-			result.point = glm::vec3(matB[3]) - result.normal * radius;
+			result.AddPoint(glm::vec3(matB[3]) - result.normal * radius, penetration);
 		}
 		else {
 			result.normal = diff / distance;
-			result.penetration = radius - distance;
-			result.point = closest;
+			result.AddPoint(closest, radius - distance);
 		}
 		return true;
 	}
@@ -314,7 +315,7 @@ std::vector<glm::vec3> Collision::GetFaceVertices(const OBB& box, const glm::vec
 		faceCenter - e1 + e2
 	};
 }
-std::vector<glm::vec3> Collision::GenerateManifold(const OBB& box1, const OBB& box2, const glm::vec3& normal, int bestAxisIndex) {
+std::vector<ContactPoint> Collision::GenerateManifold(const OBB& box1, const OBB& box2, const glm::vec3& normal, int bestAxisIndex) {
 	//pick reference
 	// referece -> face whose boundries we clip against
 	// incident -> face that will be clipped
@@ -401,14 +402,16 @@ std::vector<glm::vec3> Collision::GenerateManifold(const OBB& box1, const OBB& b
 	}
 
 	float referencePlane = glm::dot(faceNormal, faceCenter);
-	std::vector<glm::vec3> manifold;
+	std::vector<ContactPoint> manifold;
 	constexpr float epsilon = 0.01f;
 	for (glm::vec3& point : contacts) {
+		//negative = incident corner is below the reference face (overlapping)
 		float distance = glm::dot(faceNormal, point) - referencePlane;
 
 		if (distance <= epsilon) {
 			point -= faceNormal * distance;
-			manifold.push_back(point);
+			//each corner keeps its own depth (a tilted box is deeper on one side)
+			manifold.push_back({ point, glm::max(-distance, 0.0f) });
 		}
 	}
 	
@@ -486,7 +489,6 @@ bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& resul
 		result.normal = axes[bestAxisIndex].axis;
 	else
 		result.normal = -axes[bestAxisIndex].axis;
-	result.penetration = minOverlap;
 
 
 	if (bestAxisIndex < 6) {
@@ -496,16 +498,13 @@ bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& resul
 		auto contacts = GenerateManifold(boxA, boxB, result.normal, bestAxisIndex);
 		
 		if (contacts.empty()) {
-			result.point = (FurthestPoint(boxA, result.normal) + FurthestPoint(boxB, -result.normal)) * 0.5f;
+			result.AddPoint((FurthestPoint(boxA, result.normal) + FurthestPoint(boxB, -result.normal)) * 0.5f, minOverlap);
 		}
 		else {
-			//average of the manifold -> centre of the touching area
-			//resting flat it's the face centre (no torque), on an edge it's the edge midpoint, on a corner it's the corner
-			glm::vec3 average(0.0f);
-			for (const glm::vec3& p : contacts) {
-				average += p;
+			//every corner of the touching area is its own contact point
+			for (const ContactPoint& point : contacts) {
+				result.AddPoint(point.position, point.penetration);
 			}
-			result.point = average / static_cast<float>(contacts.size());
 		}
 	}
 	else {
@@ -554,7 +553,7 @@ bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& resul
 		glm::vec3 pointB;
 
 		ClosestPointsBetweenEdges(edgeA0, edgeA1, edgeB0, edgeB1, pointA, pointB);
-		result.point = (pointA + pointB) * 0.5f;
+		result.AddPoint((pointA + pointB) * 0.5f, minOverlap);
 	}
 	return true;
 }
@@ -597,6 +596,7 @@ void PhysicsWorld::Clear() {
 	colliders.clear();
 	broadPhase.clear();
 	contacts.clear();
+	impulseCache.clear();
 	triggerBuffer1.clear();
 	triggerBuffer2.clear();
 	triggerBufferSwitch = false;
@@ -626,6 +626,11 @@ void PhysicsWorld::Step(float dt) {
 	BroadPhase();
 	DetectContacts(); //the only collision tests this step
 
+	//warm start: begin from last step's pushes, so a stack starts already supported instead of from zero
+	for (Contact& contact : contacts) {
+		WarmStart(contact);
+	}
+
 	//iterate the velocity solve over the fixed contacts -> each pass carries corrections further through stacks/piles
 	constexpr int solverIterations = 6;
 	for (int i = 0; i < solverIterations; ++i) {
@@ -633,37 +638,68 @@ void PhysicsWorld::Step(float dt) {
 			SolveContact(contact);
 		}
 	}
+	StoreImpulses();
 	//fix leftover overlap once, after velocities are solved
 	for (const Contact& contact : contacts) {
 		CorrectPosition(contact);
 	}
 
-	//kill tiny leftover velocities so resting bodies actually come to rest
-	//only for bodies touching something -> a body starting to fall gains less than this per step at high fps
+	//sleep: a body touching something that stays nearly still for a while has its leftover velocity zeroed
+	//waiting (instead of zeroing at once) lets slow starts through, e.g. a crate just beginning to tip over
 	constexpr float linearRestThreshold = 0.02f;  //m/s
 	constexpr float angularRestThreshold = 0.02f; //rad/s
+	constexpr float timeToRest = 0.5f;			  //seconds
 	for (RigidBodyComponent* body : bodies) {
-		if (body->isStatic || !body->inContact) continue;
-		if (glm::length2(body->velocity) < linearRestThreshold * linearRestThreshold)
+		if (body->isStatic) continue;
+		bool nearlyStill = body->inContact
+			&& glm::length2(body->velocity) < linearRestThreshold * linearRestThreshold
+			&& glm::length2(body->angularVelocity) < angularRestThreshold * angularRestThreshold;
+		body->restTimer = nearlyStill ? body->restTimer + dt : 0.0f;
+		if (body->restTimer >= timeToRest) {
 			body->velocity = glm::vec3(0.0f);
-		if (glm::length2(body->angularVelocity) < angularRestThreshold * angularRestThreshold)
 			body->angularVelocity = glm::vec3(0.0f);
+		}
 	}
 
 	UpdateTrigger();
 }
-//fills a contact from a collision result. false when neither body can move (static vs static)
-bool PhysicsWorld::BuildContact(const Result& result, Contact& contact) {
+//velocity of a contact point on a body: linear + spin around the centre (spin skipped when it can't rotate)
+static glm::vec3 PointVelocity(const RigidBodyComponent* body, bool rotates, const glm::vec3& r) {
+	if (!body) return glm::vec3(0);
+	if (!rotates) return body->GetVelocity();
+	return body->GetVelocity() + glm::cross(body->GetAngularVelocity(), r);
+}
+
+//how much a unit impulse along `direction` changes the contact's relative velocity, as 1/x:
+//inverse masses + rotational terms (an impulse partly turns into spin instead of movement)
+static float Denominator(const Contact& contact, const glm::vec3& direction) {
+	float denominator = contact.inverseMassA + contact.inverseMassB;
+	if (contact.rotatesA) {
+		glm::vec3 rdA = glm::cross(contact.rA, direction);
+		denominator += glm::dot(direction, glm::cross(contact.inverseInertiaA * rdA, contact.rA));
+	}
+	if (contact.rotatesB) {
+		glm::vec3 rdB = glm::cross(contact.rB, direction);
+		denominator += glm::dot(direction, glm::cross(contact.inverseInertiaB * rdB, contact.rB));
+	}
+	return denominator;
+}
+
+//per touching pair: bodies, masses, inertia, friction, normal (shared by every contact point of the pair)
+//false when neither body can move (static vs static)
+bool PhysicsWorld::SetupBodies(const Result& result, Contact& contact) {
 	RigidBodyComponent* ra = result.a->GetRigidBody();
 	RigidBodyComponent* rb = result.b->GetRigidBody();
 
 	if (ra && !ra->IsStatic()) {
 		contact.inverseMassA = ra->GetInverseMass();
-		contact.inverseInertiaA = ra->GetInverseInertiaWorld(); //respects rotation locks
+		contact.rotatesA = !ra->IsRotationFrozen();
+		if (contact.rotatesA) contact.inverseInertiaA = ra->GetInverseInertiaWorld(); //respects partial locks
 	}
 	if (rb && !rb->IsStatic()) {
 		contact.inverseMassB = rb->GetInverseMass();
-		contact.inverseInertiaB = rb->GetInverseInertiaWorld();
+		contact.rotatesB = !rb->IsRotationFrozen();
+		if (contact.rotatesB) contact.inverseInertiaB = rb->GetInverseInertiaWorld();
 	}
 	if (contact.inverseMassA + contact.inverseMassB == 0.0f) return false;
 
@@ -673,73 +709,92 @@ bool PhysicsWorld::BuildContact(const Result& result, Contact& contact) {
 	contact.a = ra;
 	contact.b = rb;
 	contact.normal = result.normal;
-	contact.penetration = result.penetration;
-	contact.rA = (ra) ? result.point - ra->GetCenterMass() : glm::vec3(0);
-	contact.rB = (rb) ? result.point - rb->GetCenterMass() : glm::vec3(0);
+	//centres are only needed for rotation -> skipped (with their world matrix rebuild) when a body can't rotate
+	if (contact.rotatesA) contact.centerA = ra->GetCenterMass();
+	if (contact.rotatesB) contact.centerB = rb->GetCenterMass();
 
-	//only depends on geometry + masses -> compute once instead of every iteration
-	glm::vec3 rnA = glm::cross(contact.rA, contact.normal);
-	glm::vec3 rnB = glm::cross(contact.rB, contact.normal);
-	float rotationalA = glm::dot(contact.normal, glm::cross(contact.inverseInertiaA * rnA, contact.rA));
-	float rotationalB = glm::dot(contact.normal, glm::cross(contact.inverseInertiaB * rnB, contact.rB));
-	contact.normalDenominator = contact.inverseMassA + contact.inverseMassB + rotationalA + rotationalB;
+	//two directions along the surface, at right angles to the normal and each other
+	//(build one from whichever axis isn't close to the normal, the second is the cross product)
+	const glm::vec3& n = contact.normal;
+	contact.tangent[0] = glm::normalize(glm::abs(n.x) > 0.57735f ? glm::vec3(n.y, -n.x, 0.0f) : glm::vec3(0.0f, n.z, -n.y));
+	contact.tangent[1] = glm::cross(n, contact.tangent[0]);
 
+	//geometric mean: if either surface is slippery the contact is slippery. no rigidbody -> default material
+	constexpr float defaultFriction = 0.5f;
+	float frictionA = ra ? ra->GetFriction() : defaultFriction;
+	float frictionB = rb ? rb->GetFriction() : defaultFriction;
+	contact.friction = std::sqrt(frictionA * frictionB);
+
+	contact.positionWeight = 1.0f / static_cast<float>(result.pointCount);
 	return true;
 }
 
+//per contact point: where it is, how deep, and everything that depends on the offset from the centres
+void PhysicsWorld::SetupPoint(const ContactPoint& point, Contact& contact) {
+	contact.position = point.position;
+	contact.penetration = point.penetration;
+	if (contact.rotatesA) contact.rA = point.position - contact.centerA;
+	if (contact.rotatesB) contact.rB = point.position - contact.centerB;
+
+	//only depend on geometry + masses -> compute once instead of every iteration
+	contact.normalDenominator = Denominator(contact, contact.normal);
+	contact.tangentDenominator[0] = Denominator(contact, contact.tangent[0]);
+	contact.tangentDenominator[1] = Denominator(contact, contact.tangent[1]);
+
+	//bounce target from the approach speed before solving: separate at restitution * approach speed
+	//slow approaches don't bounce -> a resting bouncy ball doesn't twitch from gravity every step
+	constexpr float bounceThreshold = 0.5f; //m/s
+	float restitution = glm::max(contact.a ? contact.a->GetRestitution() : 0.0f, contact.b ? contact.b->GetRestitution() : 0.0f);
+	glm::vec3 velocityA = PointVelocity(contact.a, contact.rotatesA, contact.rA);
+	glm::vec3 velocityB = PointVelocity(contact.b, contact.rotatesB, contact.rB);
+	float approachVelocity = glm::dot(contact.normal, velocityB - velocityA); //negative = moving together
+	if (approachVelocity < -bounceThreshold) {
+		contact.bounceVelocity = -restitution * approachVelocity;
+	}
+}
+
 //one solver pass on one contact: velocities only, reads the bodies' current velocities
+//accumulated impulses: each part keeps a running total, the TOTAL is clamped and only the change is applied
 void PhysicsWorld::SolveContact(Contact& contact) {
+	//normal: bring the separating speed up to the bounce target (0 without restitution)
+	if (contact.normalDenominator > 1e-6f) {
+		glm::vec3 relativeVelocity = PointVelocity(contact.b, contact.rotatesB, contact.rB) - PointVelocity(contact.a, contact.rotatesA, contact.rA);
+		float velocityNormal = glm::dot(contact.normal, relativeVelocity);
+		float delta = (contact.bounceVelocity - velocityNormal) / contact.normalDenominator;
+
+		//the total push can't go below 0 (contacts never pull), but this pass may ease back an earlier over-push
+		float oldTotal = contact.normalImpulse;
+		contact.normalImpulse = glm::max(oldTotal + delta, 0.0f);
+		ApplyImpulse(contact, (contact.normalImpulse - oldTotal) * contact.normal);
+	}
+
+	//friction: grip is limited by the TOTAL push (Coulomb: pressed harder -> more grip)
+	float maxFriction = contact.friction * contact.normalImpulse;
+	for (int i = 0; i < 2; ++i) {
+		if (contact.tangentDenominator[i] <= 1e-6f) continue;
+		//recomputed: the normal impulse (and the other tangent) just changed the velocities
+		glm::vec3 relativeVelocity = PointVelocity(contact.b, contact.rotatesB, contact.rB) - PointVelocity(contact.a, contact.rotatesA, contact.rA);
+		float delta = -glm::dot(relativeVelocity, contact.tangent[i]) / contact.tangentDenominator[i];
+
+		float oldTotal = contact.tangentImpulse[i];
+		contact.tangentImpulse[i] = glm::clamp(oldTotal + delta, -maxFriction, maxFriction);
+		ApplyImpulse(contact, (contact.tangentImpulse[i] - oldTotal) * contact.tangent[i]);
+	}
+}
+
+//impulse acts at the contact point: -impulse on a, +impulse on b (static bodies don't move, spin only if they can rotate)
+void PhysicsWorld::ApplyImpulse(const Contact& contact, const glm::vec3& impulse) {
 	RigidBodyComponent* ra = contact.a;
 	RigidBodyComponent* rb = contact.b;
-
-	glm::vec3 velocityA = (ra) ? ra->GetVelocity() + glm::cross(ra->GetAngularVelocity(), contact.rA) : glm::vec3(0);
-	glm::vec3 velocityB = (rb) ? rb->GetVelocity() + glm::cross(rb->GetAngularVelocity(), contact.rB) : glm::vec3(0);
-
-	glm::vec3 relativeVelocity = velocityB - velocityA;
-	float velocityNormal = glm::dot(contact.normal, relativeVelocity);
-
-	if (velocityNormal > 0.0f) return; //already separating
-	if (contact.normalDenominator <= 1e-6f) return;
-
-	float restitution = 0.0f;
-	float j = -(1.0f + restitution) * velocityNormal / contact.normalDenominator;
-	glm::vec3 impulse = j * contact.normal;
-
-	//friction: tangent follows the current sliding direction, so its denominator is per pass
-	glm::vec3 frictionImpulse(0.0f);
-	glm::vec3 tangentVelocity = relativeVelocity - contact.normal * velocityNormal;
-	if (glm::length2(tangentVelocity) > 1e-6f) {
-		glm::vec3 tangent = glm::normalize(tangentVelocity);
-
-		glm::vec3 rtA = glm::cross(contact.rA, tangent);
-		glm::vec3 rtB = glm::cross(contact.rB, tangent);
-
-		float rotationalTangentA = glm::dot(tangent, glm::cross(contact.inverseInertiaA * rtA, contact.rA));
-		float rotationalTangentB = glm::dot(tangent, glm::cross(contact.inverseInertiaB * rtB, contact.rB));
-
-		float tangentDenominator = contact.inverseMassA + contact.inverseMassB + rotationalTangentA + rotationalTangentB;
-		if (tangentDenominator > 1e-6f) {
-			float jt = -glm::dot(relativeVelocity, tangent) / tangentDenominator;
-			float frictionA = 0.08f;
-			float frictionB = 0.08f;
-
-			float friction = std::sqrt(frictionA * frictionB);
-			float maxFriction = friction * j;
-			jt = glm::clamp(jt, -maxFriction, maxFriction);
-
-			frictionImpulse = jt * tangent;
-		}
-	}
-
 	if (ra && !ra->IsStatic()) {
-		ra->velocity += (-impulse - frictionImpulse) * contact.inverseMassA;
-		ra->angularVelocity += contact.inverseInertiaA * glm::cross(contact.rA, -impulse - frictionImpulse);
-		ra->angularVelocity *= 0.98f;
+		ra->velocity -= impulse * contact.inverseMassA;
+		if (contact.rotatesA)
+			ra->angularVelocity -= contact.inverseInertiaA * glm::cross(contact.rA, impulse);
 	}
 	if (rb && !rb->IsStatic()) {
-		rb->velocity += (impulse + frictionImpulse) * contact.inverseMassB;
-		rb->angularVelocity += contact.inverseInertiaB * glm::cross(contact.rB, impulse + frictionImpulse);
-		rb->angularVelocity *= 0.98f;
+		rb->velocity += impulse * contact.inverseMassB;
+		if (contact.rotatesB)
+			rb->angularVelocity += contact.inverseInertiaB * glm::cross(contact.rB, impulse);
 	}
 }
 
@@ -753,7 +808,8 @@ void PhysicsWorld::CorrectPosition(const Contact& contact) {
 
 	float totalInverseMass = contact.inverseMassA + contact.inverseMassB;
 	float depth = glm::max(contact.penetration - slop, 0.0f);
-	glm::vec3 correction = contact.normal * (depth / totalInverseMass) * percent;
+	//each point does its share -> a flat box with 4 points isn't pushed out 4 times too far
+	glm::vec3 correction = contact.normal * (depth / totalInverseMass) * percent * contact.positionWeight;
 
 	if (contact.a) contact.a->Move(-correction * contact.inverseMassA);
 	if (contact.b) contact.b->Move(correction * contact.inverseMassB);
@@ -797,8 +853,61 @@ void PhysicsWorld::DetectContacts() {
 			else triggerBuffer1.insert(pair);
 			continue;
 		}
-		Contact contact;
-		if (BuildContact(result, contact)) contacts.push_back(contact);
+		Contact base;
+		base.pair = pair;
+		if (!SetupBodies(result, base)) continue;
+		for (int i = 0; i < result.pointCount; ++i) {
+			Contact contact = base;
+			SetupPoint(result.points[i], contact);
+			contacts.push_back(contact);
+		}
+	}
+}
+
+//starts a contact point from last step's totals and applies them
+//matched to the nearest point the same two colliders had last step (points barely move in one step)
+void PhysicsWorld::WarmStart(Contact& contact) {
+	auto it = impulseCache.find(contact.pair);
+	if (it == impulseCache.end()) return; //pair wasn't touching last step
+	const CachedManifold& manifold = it->second;
+
+	constexpr float matchDistance = 0.05f; //metres
+	const CachedPoint* match = nullptr;
+	float bestDistance2 = matchDistance * matchDistance;
+	for (int i = 0; i < manifold.pointCount; ++i) {
+		float distance2 = glm::length2(manifold.points[i].position - contact.position);
+		if (distance2 < bestDistance2) {
+			bestDistance2 = distance2;
+			match = &manifold.points[i];
+		}
+	}
+	if (!match) return; //new point this step
+
+	//stored as the push on b -> flip if this step's pair is the other way round
+	glm::vec3 friction = (manifold.a == contact.pair.a) ? match->friction : -match->friction;
+
+	contact.normalImpulse = match->normal;
+	float maxFriction = contact.friction * contact.normalImpulse;
+	glm::vec3 impulse = contact.normalImpulse * contact.normal;
+	for (int i = 0; i < 2; ++i) {
+		//tangents are rebuilt every step -> project the stored friction onto this step's directions
+		contact.tangentImpulse[i] = glm::clamp(glm::dot(friction, contact.tangent[i]), -maxFriction, maxFriction);
+		impulse += contact.tangentImpulse[i] * contact.tangent[i];
+	}
+	ApplyImpulse(contact, impulse);
+}
+
+//keeps this step's totals for the next one, grouped by pair. only touching pairs are kept, so separated pairs drop out
+void PhysicsWorld::StoreImpulses() {
+	impulseCache.clear();
+	for (const Contact& contact : contacts) {
+		CachedManifold& manifold = impulseCache[contact.pair];
+		manifold.a = contact.pair.a;
+		if (manifold.pointCount >= Result::MaxPoints) continue;
+		CachedPoint& cached = manifold.points[manifold.pointCount++];
+		cached.position = contact.position;
+		cached.normal = contact.normalImpulse;
+		cached.friction = contact.tangentImpulse[0] * contact.tangent[0] + contact.tangentImpulse[1] * contact.tangent[1];
 	}
 }
 
@@ -810,6 +919,12 @@ void PhysicsWorld::Integrate(RigidBodyComponent* body, float dt) {
 	body->velocity += body->pendingImpulse * body->inverseMass;
 	transform->Translate(body->velocity * dt);
 
+	//rotation fully locked -> skip all torque, inertia and spin work
+	if (body->IsRotationFrozen()) {
+		body->angularVelocity = glm::vec3(0.0f);
+		return;
+	}
+
 	//angular
 	glm::mat3 R = glm::mat3_cast(transform->GetQuat());
 	glm::mat3 inverseInertiaWorld = R * body->GetInverseLocalInertiaTensor() * glm::transpose(R);
@@ -820,7 +935,9 @@ void PhysicsWorld::Integrate(RigidBodyComponent* body, float dt) {
 
 	body->ApplyConstraint();
 
-	body->angularVelocity *= 0.995f;
+	//time based, so it's the same at any step rate. 0.6/s ~= the old 0.995 per step at 120 steps/s
+	constexpr float angularDamping = 0.6f;
+	body->angularVelocity *= 1.0f / (1.0f + angularDamping * dt);
 	float angularSpeed = glm::length(body->angularVelocity);
 	if (angularSpeed < 1e-5f) {
 		body->angularVelocity = glm::vec3(0.0f);

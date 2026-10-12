@@ -183,6 +183,7 @@ public:
                 cube.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/sphere_yellow.gltf"));
             }
             cube.AddComponent<RigidBodyComponent>();
+            cube.GetComponent<RigidBodyComponent>()->SetRestitution(0.98f);
             cube.GetComponent<RigidBodyComponent>()->AddImpulse(glm::vec3((float)distrib(gen), 0, (float)distrib(gen)) * 0.5f);
             cube.AddComponent<ColliderComponent>(SHAPE::Sphere);
 
@@ -297,7 +298,7 @@ public:
 int main() {
     LevelLoader game;
     //BallDisplay game;
-    //Shooter game;
+    //Shooter game;4
     Application app = Application(1920, 1080, "GAME");
     app.Run(game);
     return 0;
