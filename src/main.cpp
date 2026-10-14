@@ -280,17 +280,30 @@ public:
 
     void Update(float dt) override {
         if (Input::GetMouseButtonDown(0)) {
-            GameObject& ball = scene.CreateObject();
-            ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/fireball.gltf"));
-            RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
-            rb->SetMass(5);
-            ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
-            c->SetRadius(0.15f);
+            //fireball shooting, replaced by a raycast for now
+            //GameObject& ball = scene.CreateObject();
+            //ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/fireball.gltf"));
+            //RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
+            //rb->SetMass(5);
+            //ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
+            //c->SetRadius(0.15f);
 
+            //TransformComponent* transform = player->GetComponent<TransformComponent>();
+            //rb->AddImpulse(transform->Forward() * (50.0f * rb->GetMass()));
+            //ball.GetComponent<TransformComponent>()->SetPosition(transform->GetPosition() + transform->Forward());
+            //ball.GetComponent<TransformComponent>()->SetSize({ 0.3f,0.3f,0.3f });
+
+            //ray straight ahead from the player's centre, ignoring the player's own colliders
             TransformComponent* transform = player->GetComponent<TransformComponent>();
-            rb->AddImpulse(transform->Forward() * (50.0f * rb->GetMass()));
-            ball.GetComponent<TransformComponent>()->SetPosition(transform->GetPosition() + transform->Forward());
-            ball.GetComponent<TransformComponent>()->SetSize({ 0.3f,0.3f,0.3f });
+            RaycastOptions options;
+            options.ignore = player;
+            RaycastHit hit;
+            if (scene.Raycast(transform->GetPosition(), transform->Forward(), hit, options)) {
+                std::cout << hit;
+            }
+            else {
+                std::cout << "Ray hit nothing\n";
+            }
         }
     }
 };

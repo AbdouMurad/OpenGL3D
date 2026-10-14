@@ -16,6 +16,7 @@ void SceneSerializer::Load(const std::string& path, Scene& scene) {
 	for (const json& objectData : objects) {
 		std::cout << objectData << std::endl;
 		GameObject& obj = scene.CreateObject(objectData["id"]);
+		if (objectData.contains("name")) obj.SetName(objectData["name"].get<std::string>());
 		//should always be true
 		if (objectData.contains("Transform")) {
 			const json& transformData = objectData["Transform"];
