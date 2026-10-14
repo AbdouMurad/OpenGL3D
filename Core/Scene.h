@@ -38,4 +38,7 @@ public:
 	void Render(Renderer& renderer);
 	void DebugRender(DebugRenderer& renderer);
 
+	//closest collider along a ray (see RaycastHit / RaycastOptions in PhysicsWorld.h). false = hit nothing
+	bool Raycast(const glm::vec3& origin, const glm::vec3& direction, RaycastHit& hit, const RaycastOptions& options = {});
+
 };

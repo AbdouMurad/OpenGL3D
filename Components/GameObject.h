@@ -7,6 +7,7 @@
 #include <glm/gtx/quaternion.hpp> 
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <type_traits>
 #include "Core/Handlers.h"
 
@@ -96,6 +97,7 @@ public:
 
 class GameObject {
 	ObjectHandle ID;
+	std::string name; //readable label, e.g. from the level file. not unique, "" when unnamed
 	std::vector<std::unique_ptr<Component>> components;
 
 	//hot components cached on add so GetComponent doesn't dynamic_cast scan for them
@@ -109,6 +111,12 @@ public:
 	}
 	void SetID(ObjectHandle i) {
 		ID = i;
+	}
+	const std::string& GetName() const {
+		return name;
+	}
+	void SetName(const std::string& n) {
+		name = n;
 	}
 	
 	template<typename T, typename... Args>

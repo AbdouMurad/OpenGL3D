@@ -84,6 +84,11 @@ void Scene::Update(float dt) {
 	if (physicsAccumulator >= physicsStep) physicsAccumulator = 0.0f;
 }
 
+bool Scene::Raycast(const glm::vec3& origin, const glm::vec3& direction, RaycastHit& hit, const RaycastOptions& options) {
+	if (dirtyScene) Start(); //objects added this frame aren't in the physics lists until the next Start()
+	return physics.Raycast(origin, direction, hit, options);
+}
+
 void Scene::DebugRender(DebugRenderer& renderer) {
 	for (const auto& obj : objects) {
 		ColliderComponent* collider = obj.get()->GetComponent<ColliderComponent>();

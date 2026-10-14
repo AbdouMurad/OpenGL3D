@@ -6,6 +6,7 @@
 #include "Events/EventBus.h"
 #include <unordered_set>
 #include <unordered_map>
+#include <cfloat>
 
 inline void Print(const glm::vec3& vector) {
 	std::cout << vector.x << ' ' << vector.y << ' ' << vector.z << '\n';
@@ -31,6 +32,22 @@ struct Result {
 	void AddPoint(const glm::vec3& position, float penetration) {
 		if (pointCount < MaxPoints) points[pointCount++] = { position, penetration };
 	}
+};
+
+//what a raycast hit
+struct RaycastHit {
+	ColliderComponent* collider = nullptr; //-> getOwner() for the object, GetRigidBody() for physics
+	glm::vec3 point = glm::vec3(0);		   //world space
+	glm::vec3 normal = glm::vec3(0);	   //surface direction at the hit (faces back towards the ray)
+	float distance = 0.0f;				   //metres from the origin (the ray's t, with a normalized direction)
+};
+std::ostream& operator<<(std::ostream& os, const RaycastHit& hit);
+
+//optional filters for a raycast
+struct RaycastOptions {
+	float maxDistance = FLT_MAX;		//how far to look, infinite by default
+	bool hitTriggers = false;			//trigger zones are usually invisible -> skipped
+	const GameObject* ignore = nullptr; //skip this object's colliders (e.g. whoever is shooting)
 };
 
 namespace Collision {
@@ -75,6 +92,12 @@ namespace Collision {
 	//bool CapsuleCapsule(ColliderComponent&, ColliderComponent&, Result&);
 
 
+
+	//ray (normalized direction) against one collider, closer than maxDistance
+	//false on a miss, or when the origin is inside the collider (it's skipped)
+	bool RaySphere(const glm::vec3& origin, const glm::vec3& direction, ColliderComponent& collider, float maxDistance, RaycastHit& hit);
+	bool RayBox(const glm::vec3& origin, const glm::vec3& direction, ColliderComponent& collider, float maxDistance, RaycastHit& hit);
+	bool Ray(const glm::vec3& origin, const glm::vec3& direction, ColliderComponent& collider, float maxDistance, RaycastHit& hit);
 
 	bool AABBTest(const AABB&, const AABB&);
 	bool Test(ColliderComponent& a, ColliderComponent& b, Result& result);
@@ -187,4 +210,7 @@ public:
 	glm::vec3 gravity = glm::vec3(0, -9.81, 0);
 	void Step(float dt);
 	void Clear();
+
+	//closest collider along the ray. direction doesn't need to be normalized. false = hit nothing
+	bool Raycast(const glm::vec3& origin, const glm::vec3& direction, RaycastHit& hit, const RaycastOptions& options = {}) const;
 };

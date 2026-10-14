@@ -557,6 +557,106 @@ bool Collision::BoxBox(ColliderComponent& a, ColliderComponent& b, Result& resul
 	}
 	return true;
 }
+//-------------------Raycasts-----------------
+std::ostream& operator<<(std::ostream& os, const RaycastHit& hit) {
+	if (!hit.collider) {
+		os << "RaycastHit: { none }\n";
+		return os;
+	}
+	const GameObject* object = hit.collider->getOwner();
+	os << "RaycastHit: {\n";
+	if (object) {
+		os << "	Object: " << (object->GetName().empty() ? "(unnamed)" : "\"" + object->GetName() + "\"") << " (ID " << object->GetID() << ")\n";
+	}
+	if (!hit.collider->GetID().empty()) {
+		os << "	Collider: \"" << hit.collider->GetID() << "\"\n";
+	}
+	os << "	Distance: " << hit.distance << "\n";
+	os << "	Point: { x: " << hit.point.x << ", y: " << hit.point.y << ", z: " << hit.point.z << "}\n";
+	os << "	Normal: { x: " << hit.normal.x << ", y: " << hit.normal.y << ", z: " << hit.normal.z << "}\n";
+	os << "}\n";
+	return os;
+}
+
+bool Collision::RaySphere(const glm::vec3& origin, const glm::vec3& direction, ColliderComponent& collider, float maxDistance, RaycastHit& hit) {
+	glm::vec3 center = collider.GetMatrix()[3];
+	float radius = static_cast<Sphere*>(collider.shape.get())->GetRadius();
+
+	//origin + t * direction on the sphere surface -> t^2 + 2bt + c = 0 (direction is unit length)
+	glm::vec3 m = origin - center;
+	float b = glm::dot(m, direction);
+	float c = glm::dot(m, m) - radius * radius;
+	if (c < 0.0f) return false;	 //origin inside -> skipped
+	if (b > 0.0f) return false;	 //outside and pointing away
+	float discriminant = b * b - c;
+	if (discriminant < 0.0f) return false; //passes beside it
+
+	float t = -b - std::sqrt(discriminant); //nearer of the two solutions = where it enters
+	if (t > maxDistance) return false;
+
+	hit.collider = &collider;
+	hit.distance = t;
+	hit.point = origin + direction * t;
+	hit.normal = (hit.point - center) / radius;
+	return true;
+}
+bool Collision::RayBox(const glm::vec3& origin, const glm::vec3& direction, ColliderComponent& collider, float maxDistance, RaycastHit& hit) {
+	glm::mat4 matrix = collider.GetMatrix();
+	glm::vec3 center = matrix[3];
+	glm::vec3 axes[3] = { glm::normalize(glm::vec3(matrix[0])), glm::normalize(glm::vec3(matrix[1])), glm::normalize(glm::vec3(matrix[2])) };
+	glm::vec3 halfExtent = static_cast<Box*>(collider.shape.get())->GetHalfExtent();
+
+	//ray in the box's own space -> the box becomes axis aligned from -halfExtent to +halfExtent
+	glm::vec3 offset = origin - center;
+	glm::vec3 localOrigin(glm::dot(offset, axes[0]), glm::dot(offset, axes[1]), glm::dot(offset, axes[2]));
+	glm::vec3 localDirection(glm::dot(direction, axes[0]), glm::dot(direction, axes[1]), glm::dot(direction, axes[2]));
+
+	if (glm::all(glm::lessThanEqual(glm::abs(localOrigin), halfExtent))) return false; //origin inside -> skipped
+
+	//slab test: per axis, where the ray crosses that axis' two parallel faces
+	//latest entry over all axes = where it enters the box, earliest exit = where it leaves
+	float tEnter = -FLT_MAX;
+	float tExit = FLT_MAX;
+	int enterAxis = -1;
+	float enterSign = 0.0f;
+	for (int i = 0; i < 3; ++i) {
+		if (std::abs(localDirection[i]) < 1e-8f) {
+			//parallel to these faces -> must already be between them
+			if (std::abs(localOrigin[i]) > halfExtent[i]) return false;
+			continue;
+		}
+		float t1 = (-halfExtent[i] - localOrigin[i]) / localDirection[i];
+		float t2 = (halfExtent[i] - localOrigin[i]) / localDirection[i];
+		float nearT = std::min(t1, t2);
+		float farT = std::max(t1, t2);
+		if (nearT > tEnter) {
+			tEnter = nearT;
+			enterAxis = i;
+			enterSign = localDirection[i] > 0.0f ? -1.0f : 1.0f; //the face it enters faces against the ray
+		}
+		tExit = std::min(tExit, farT);
+		if (tEnter > tExit) return false; //left one slab before entering another -> miss
+	}
+	if (enterAxis < 0 || tEnter < 0.0f) return false; //box is behind the origin
+	if (tEnter > maxDistance) return false;
+
+	hit.collider = &collider;
+	hit.distance = tEnter;
+	hit.point = origin + direction * tEnter;
+	hit.normal = axes[enterAxis] * enterSign;
+	return true;
+}
+bool Collision::Ray(const glm::vec3& origin, const glm::vec3& direction, ColliderComponent& collider, float maxDistance, RaycastHit& hit) {
+	switch (collider.shape->GetType()) {
+	case (SHAPE::Sphere):
+		return RaySphere(origin, direction, collider, maxDistance, hit);
+	case (SHAPE::Box):
+		return RayBox(origin, direction, collider, maxDistance, hit);
+	default:
+		return false; //TODO: Capsule
+	}
+}
+
 bool Collision::AABBTest(const AABB& a, const AABB& b) {
 	bool overlapX = (a.min.x <= b.max.x) && (a.max.x >= b.min.x);
 	bool overlapY = (a.min.y <= b.max.y) && (a.max.y >= b.min.y);
@@ -588,6 +688,28 @@ void PhysicsWorld::BroadPhase() {
 			}
 		}
 	}
+}
+
+//closest hit over every collider. each hit found shortens the search for the rest
+bool PhysicsWorld::Raycast(const glm::vec3& origin, const glm::vec3& direction, RaycastHit& hit, const RaycastOptions& options) const {
+	float length = glm::length(direction);
+	if (length < 1e-8f) return false; //no direction to cast in
+	glm::vec3 unitDirection = direction / length;
+
+	bool found = false;
+	float closest = options.maxDistance;
+	for (ColliderComponent* collider : colliders) {
+		if (!options.hitTriggers && collider->IsTrigger()) continue;
+		if (options.ignore && collider->getOwner() == options.ignore) continue;
+
+		RaycastHit candidate;
+		if (Collision::Ray(origin, unitDirection, *collider, closest, candidate)) {
+			hit = candidate;
+			closest = candidate.distance;
+			found = true;
+		}
+	}
+	return found;
 }
 
 //drops all pointers to bodies/colliders (they dangle once the owning objects are destroyed)
