@@ -13,6 +13,8 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 add_executable(OpenGL3D
     src/main.cpp
+    src/ThirdPersonCamera.h
+    src/ThirdPersonController.h
 
     Render/GPU/Texture.h
     Render/GPU/Texture.cpp

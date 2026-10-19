@@ -1,4 +1,6 @@
 #include "Core/Engine.h"
+#include "ThirdPersonCamera.h"
+#include "ThirdPersonController.h"
 #include <random>
 
 class PlayerController : public Component {
@@ -81,6 +83,45 @@ public:
         if (abs(mouseDelta.x) > 0.0001f)
             owner->GetComponent<TransformComponent>()->Rotate({ 0, -mouseDelta.x, 0 });
     };
+};
+
+//circles its object around a point at a fixed height in the sky, always facing the point
+//on a directional light this sweeps the sun around the map: shadows turn like a sundial
+//height in the sky and the starting point come from the object's rotation in the level file
+class SunOrbit : public Component {
+    glm::vec3 center;
+    float distance;          //how far from the centre (only affects position, a directional light's direction is all that matters)
+    float degreesPerSecond;  //orbit speed around the vertical axis
+    float elevation = 0.0f;  //degrees above the horizon, read in Start()
+    float angle = 0.0f;      //current position on the circle, degrees
+public:
+    SunOrbit(glm::vec3 center, float distance, float degreesPerSecond)
+        :   center(center), distance(distance), degreesPerSecond(degreesPerSecond) {}
+
+    void Start() override {
+        //the light comes from the opposite of where it shines -> that's where the sun sits
+        glm::vec3 forward = owner->GetComponent<TransformComponent>()->GetQuat() * glm::vec3(0, 0, -1);
+        glm::vec3 towardsSun = -glm::normalize(forward);
+        //kept below straight up: facing straight down has no defined "around the circle" direction
+        elevation = glm::clamp(glm::degrees(std::asin(towardsSun.y)), 1.0f, 89.0f);
+        angle = glm::degrees(std::atan2(towardsSun.z, towardsSun.x));
+        Update(0.0f); //place it on the orbit right away
+    }
+
+    void Update(float dt) override {
+        angle = std::fmod(angle + degreesPerSecond * dt, 360.0f);
+
+        float a = glm::radians(angle);
+        float e = glm::radians(elevation);
+        //point on a circle around the vertical axis, raised by the elevation
+        glm::vec3 offset(std::cos(e) * std::cos(a), std::sin(e), std::cos(e) * std::sin(a));
+        glm::vec3 position = center + offset * distance;
+
+        TransformComponent* transform = owner->GetComponent<TransformComponent>();
+        transform->SetPosition(position);
+        //quatLookAt turns -z (forward, the way the light shines) towards the centre
+        transform->SetRotation(glm::quatLookAt(glm::normalize(center - position), glm::vec3(0, 1, 0)));
+    }
 };
 
 
@@ -263,6 +304,8 @@ public:
 
 class LevelLoader : public Game {
     GameObject* player = nullptr;
+    ThirdPersonCamera* followCamera = nullptr;
+    float shootCooldown = 0.0f;
 public:
     void Start(float width, float height) override {
         
@@ -270,40 +313,61 @@ public:
         AssetManager::Get().LoadModel("assets/models/fireball.gltf");
 
         player = &scene.GetObject(2);
-        player->AddComponent<PlayerController>(&scene.eventBus);
 
         GameObject& camera = scene.GetObject(3);
+        //the level parents the camera to the player; the follow camera moves on its own instead
+        camera.GetComponent<TransformComponent>()->parent = nullptr;
         CameraComponent* cameraComponent = camera.AddComponent<CameraComponent>(width, height);
         cameraComponent->SetViewport(width, height);
+        followCamera = camera.AddComponent<ThirdPersonCamera>(&scene, player);
         scene.SetMainCamera(camera);
+
+        player->AddComponent<ThirdPersonController>(&scene, followCamera);
+        shootCooldown = 0.0f;
+
+        //sun circles the middle of the map, one full turn every 36 s
+        GameObject& sun = scene.GetObject(41);
+        sun.AddComponent<SunOrbit>(glm::vec3(0.0f), 20.0f, 10.0f);
     }
 
     void Update(float dt) override {
-        if (Input::GetMouseButtonDown(0)) {
-            //fireball shooting, replaced by a raycast for now
+        //fireballs go where the middle of the screen points, not just the way the player faces
+        //(objects are created here, not in a component, because the scene is looping over its objects during component updates)
+        shootCooldown -= dt;
+        if (Input::GetMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && shootCooldown <= 0.0f) {
+            shootCooldown = 0.15f;
+            TransformComponent* transform = player->GetComponent<TransformComponent>();
+            glm::vec3 playerPos = transform->GetPosition();
+
+            //ray through the crosshair, started level with the player so nothing between the camera and the player gets hit
+            glm::vec3 aimDir = followCamera->GetAimDirection();
+            glm::vec3 aimOrigin = followCamera->GetAimOrigin();
+            aimOrigin += aimDir * std::max(0.0f, glm::dot(playerPos - aimOrigin, aimDir));
+
+            RaycastOptions options;
+            options.ignore = player;
+            options.maxDistance = 200.0f;
+            RaycastHit hit;
+            glm::vec3 aimPoint = scene.Raycast(aimOrigin, aimDir, hit, options) ? hit.point : aimOrigin + aimDir * 200.0f;
+
+            //spawn just in front of the player, towards the aim point
+            glm::vec3 handPos = playerPos + glm::vec3(0.0f, 0.3f, 0.0f);
+            glm::vec3 flat = aimPoint - handPos;
+            flat.y = 0.0f;
+            if (glm::length2(flat) > 1e-6f) handPos += glm::normalize(flat) * 0.9f;
+            glm::vec3 shotDir = glm::normalize(aimPoint - handPos);
+
             GameObject& ball = scene.CreateObject();
             ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel("assets/models/fireball.gltf"));
             RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
-            rb->SetMass(5);
+            rb->SetMass(15);
             ColliderComponent* c = ball.AddComponent<ColliderComponent>(SHAPE::Sphere);
             c->SetRadius(0.15f);
-
-            TransformComponent* transform = player->GetComponent<TransformComponent>();
-            rb->AddImpulse(transform->Forward() * (50.0f * rb->GetMass()));
-            ball.GetComponent<TransformComponent>()->SetPosition(transform->GetPosition() + transform->Forward());
+            rb->AddImpulse(shotDir * (40.0f * rb->GetMass()));
+            ball.GetComponent<TransformComponent>()->SetPosition(handPos);
             ball.GetComponent<TransformComponent>()->SetSize({ 0.3f,0.3f,0.3f });
 
-            /*ray straight ahead from the player's centre, ignoring the player's own colliders
-            TransformComponent* transform = player->GetComponent<TransformComponent>();
-            RaycastOptions options;
-            options.ignore = player;
-            RaycastHit hit;
-            if (scene.Raycast(transform->GetPosition(), transform->Forward(), hit, options)) {
-                std::cout << hit;
-            }
-            else {
-                std::cout << "Ray hit nothing\n";
-            }*/
+            followCamera->AddTrauma(0.12f);
         }
     }
 };
