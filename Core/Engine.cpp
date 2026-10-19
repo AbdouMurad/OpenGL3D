@@ -45,6 +45,7 @@ void Application::Run(Game& game) {
 		Input::Update();
 		window.PollEvents();	
 		if (Input::GetKeyDown(GLFW_KEY_Z)) debugRenderer.ToggleDebug();
+		if (Input::GetKeyDown(GLFW_KEY_X)) renderer.ToggleShadowDebug();
 		if (Input::GetKeyDown(GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window.GetHandler(), GLFW_TRUE);
 		if ((Input::GetKey(GLFW_KEY_LEFT_CONTROL) || Input::GetKey(GLFW_KEY_RIGHT_CONTROL)) && Input::GetKeyDown(GLFW_KEY_R)) {
 			startGame(game);

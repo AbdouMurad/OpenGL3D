@@ -16,6 +16,8 @@ add_executable(OpenGL3D
 
     Render/GPU/Texture.h
     Render/GPU/Texture.cpp
+    Render/GPU/ShadowMap.h
+    Render/GPU/ShadowMap.cpp
     Render/GPU/Buffer.h
     Render/GPU/Buffer.cpp
     Render/GPU/shaderClass.h

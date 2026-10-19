@@ -52,3 +52,24 @@ public:
 	void Unbind();
 	void Delete();
 };
+
+//framebuffer: something to render into other than the window (e.g. a shadow map's depth texture)
+class FBO {
+public:
+	GLuint ID;
+	FBO();
+	void init();
+
+	void Bind();	//following draws go into this framebuffer
+	void Unbind();	//back to the window
+	void Delete();
+
+	//texture becomes the depth target. AttachDepthTextureLayer is for one layer of a texture array (one shadow map per light)
+	void AttachDepthTexture(GLuint textureID);
+	void AttachDepthTextureLayer(GLuint textureID, GLint layer);
+	//depth only targets draw/read no colour, OpenGL has to be told or the framebuffer is incomplete
+	void DisableColorBuffers();
+
+	//attachments fit together and it can be rendered to. prints the reason when not
+	bool IsComplete();
+};

@@ -11,9 +11,11 @@ out vec3 FragPos;
 out vec3 Normal;
 out vec3 Tangent;
 out float TangentSign;
+out vec4 FragPosLightSpace; //where this point lands in the shadow map (light's clip space)
 
 uniform mat4 camMatrix;
 uniform mat4 model;
+uniform mat4 u_lightMatrix; //same matrix the shadow pass rendered with
 
 void main() {
 	vec3 N = normalize(mat3(model) * aNormal);
@@ -27,6 +29,7 @@ void main() {
 	Normal = N;
 	Tangent = T;
 	TangentSign = aTangent.w;
+	FragPosLightSpace = u_lightMatrix * vec4(FragPos, 1.0);
 
 	gl_Position = camMatrix * vec4(FragPos, 1.0);
 }

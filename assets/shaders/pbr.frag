@@ -8,6 +8,7 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec3 Tangent;
 in float TangentSign;
+in vec4 FragPosLightSpace;
 
 uniform vec3 u_cameraPos;
 
@@ -53,6 +54,35 @@ struct DirectionalLight {
 
 uniform int u_directionalLightCount;
 uniform DirectionalLight u_directionalLights[MAX_DIRECTIONAL_LIGHTS];
+
+//shadow map of directional light 0 (rendered by the shadow pass from the light's point of view)
+uniform bool u_hasShadowMap;
+uniform sampler2DArray u_shadowMap;
+
+//0 = fully lit, 1 = fully in shadow. N = surface normal, L = direction towards the light
+float shadowFactor(vec3 N, vec3 L) {
+	if (!u_hasShadowMap) return 0.0;
+
+	//light clip space -> 0..1: xy = where to read the shadow map, z = this point's depth from the light
+	vec3 p = FragPosLightSpace.xyz / FragPosLightSpace.w;
+	p = p * 0.5 + 0.5;
+	if (p.z > 1.0) return 0.0; //beyond the light box's far plane -> nothing recorded, treat as lit
+
+	//bias: compare against "a bit closer to the light" so limited depth precision doesn't shadow a surface with itself (acne)
+	//surfaces at a grazing angle to the light need more (one shadow map texel covers a longer slope)
+	float bias = max(0.002 * (1.0 - dot(N, L)), 0.0005);
+
+	//PCF: 3x3 neighbouring texels each give lit/shadowed, the average softens the jagged texel edges
+	vec2 texel = 1.0 / vec2(textureSize(u_shadowMap, 0).xy);
+	float shadow = 0.0;
+	for (int x = -1; x <= 1; ++x) {
+		for (int y = -1; y <= 1; ++y) {
+			float closest = texture(u_shadowMap, vec3(p.xy + vec2(x, y) * texel, 0.0)).r; //nearest surface the light sees there
+			shadow += (p.z - bias > closest) ? 1.0 : 0.0; //something closer to the light -> this point is behind it
+		}
+	}
+	return shadow / 9.0;
+}
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
@@ -188,7 +218,9 @@ void main() {
 		//towards the light = against the way it travels. no distance falloff
 		vec3 L = normalize(-u_directionalLights[i].direction);
 		vec3 radiance = u_directionalLights[i].color * u_directionalLights[i].intensity;
-		lighting += shadeLight(N, V, L, radiance, albedo.rgb, metallic, roughness);
+		//only light 0 has a shadow map. geometric normal for the bias (normal maps would make it noisy)
+		float shadow = (i == 0) ? shadowFactor(normalize(Normal), L) : 0.0;
+		lighting += (1.0 - shadow) * shadeLight(N, V, L, radiance, albedo.rgb, metallic, roughness);
 	}
 
 	vec3 ambient = vec3(0.03) * albedo.rgb * (1.0 - metallic);
