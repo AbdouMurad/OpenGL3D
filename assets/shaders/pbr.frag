@@ -42,6 +42,18 @@ struct PointLight {
 uniform int u_lightCount;
 uniform PointLight u_lights[MAX_LIGHTS];
 
+const int MAX_DIRECTIONAL_LIGHTS = 4;
+
+//sun-like: same direction everywhere, no falloff
+struct DirectionalLight {
+	vec3 direction; //the way the light travels (world space, normalized)
+	vec3 color;
+	float intensity;
+};
+
+uniform int u_directionalLightCount;
+uniform DirectionalLight u_directionalLights[MAX_DIRECTIONAL_LIGHTS];
+
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
@@ -76,6 +88,35 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 	float ggx2 = GeometrySchlickGGX(NdotL, roughness);
 
 	return ggx1 * ggx2;
+}
+
+//light reaching the surface from direction L (towards the light) with the given radiance
+//-> light reflected towards the viewer V. same Cook-Torrance GGX math for every light type
+vec3 shadeLight(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 albedo, float metallic, float roughness) {
+	vec3 H = normalize(V + L);
+
+	// Reflectance at normal incidence, metals use their albedo as F0
+	vec3 F0 = mix(vec3(0.04), albedo, metallic);
+
+	float HdotV = clamp(dot(H, V), 0.0, 1.0);
+	vec3 F = fresnelSchlick(HdotV, F0);
+
+	float NDF = DistributionGGX(N, H, roughness);
+	float G = GeometrySmith(N, V, L, roughness);
+
+	vec3 numerator = NDF * G * F;
+	float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+	vec3 specular = numerator / denominator;
+
+	vec3 kS = F;
+	vec3 kD = vec3(1.0) - kS;
+	// Metals don't have diffuse reflection
+	kD *= 1.0 - metallic;
+
+	float NdotL = max(dot(N, L), 0.0);
+	vec3 diffuse = kD * albedo / 3.14159;
+
+	return (diffuse + specular) * radiance * NdotL;
 }
 
 vec3 getNormal() {
@@ -132,84 +173,22 @@ void main() {
 
 	for (int i = 0; i < u_lightCount; ++i)
 	{
-		vec3 L = normalize(
-			u_lights[i].position - FragPos
-		);
-
-		vec3 H = normalize(V + L);
+		vec3 L = normalize(u_lights[i].position - FragPos);
 
 		float distance = length(u_lights[i].position - FragPos);
-
-		float attenuation = clamp(
-			1.0 - distance / u_lights[i].range,
-			0.0,
-			1.0
-		);
-
+		float attenuation = clamp(1.0 - distance / u_lights[i].range, 0.0, 1.0);
 		attenuation *= attenuation;
 
-
 		vec3 radiance = u_lights[i].color * u_lights[i].intensity * attenuation;
+		lighting += shadeLight(N, V, L, radiance, albedo.rgb, metallic, roughness);
+	}
 
-		// Reflectance at normal incidence
-		vec3 F0 = vec3(0.04);
-
-		// Metals use their albedo as F0
-		F0 = mix(
-			F0,
-			albedo.rgb,
-			metallic
-		);
-
-		float HdotV = clamp(dot(H, V), 0.0, 1.0);
-		vec3 F = fresnelSchlick(HdotV, F0);
-
-		float NDF = DistributionGGX(
-					N,
-					H,
-					roughness
-				);
-
-		float G = GeometrySmith(
-					N,
-					V,
-					L,
-					roughness
-				);
-
-
-		vec3 numerator = NDF * G * F;
-
-		float denominator =
-			4.0 *
-			max(dot(N,V),0.0) *
-			max(dot(N,L),0.0)
-			+ 0.001;
-
-		vec3 specular = numerator / denominator;
-
-		vec3 kS = F;
-		vec3 kD = vec3(1.0) - kS;
-
-		// Metals don't have diffuse reflection
-		kD *= 1.0 - metallic;
-
-
-		float NdotL =
-			max(dot(N,L),0.0);
-
-
-		vec3 diffuse =
-			kD *
-			albedo.rgb /
-			3.14159;
-
-
-		lighting +=
-			(diffuse + specular)
-			*
-			radiance *
-			NdotL;
+	for (int i = 0; i < u_directionalLightCount; ++i)
+	{
+		//towards the light = against the way it travels. no distance falloff
+		vec3 L = normalize(-u_directionalLights[i].direction);
+		vec3 radiance = u_directionalLights[i].color * u_directionalLights[i].intensity;
+		lighting += shadeLight(N, V, L, radiance, albedo.rgb, metallic, roughness);
 	}
 
 	vec3 ambient = vec3(0.03) * albedo.rgb * (1.0 - metallic);

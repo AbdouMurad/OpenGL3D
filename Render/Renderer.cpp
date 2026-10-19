@@ -109,6 +109,18 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 			shader.setFloat(base + ".intensity", lights[i].intensity);
 			shader.setFloat(base + ".range", lights[i].range);
 		}
+
+		//directional lights reach everything -> no distance filtering or sorting
+		int directionalCount = static_cast<int>(std::min<size_t>(currentFrame->directionalLights.size(), 4));
+		shader.setInt("u_directionalLightCount", directionalCount);
+		for (int i = 0; i < directionalCount; ++i) {
+			const RenderDirectionalLight& light = currentFrame->directionalLights[i];
+			std::string base = "u_directionalLights[" + std::to_string(i) + "]";
+
+			shader.setVec3(base + ".direction", light.direction);
+			shader.setVec3(base + ".color", light.color);
+			shader.setFloat(base + ".intensity", light.intensity);
+		}
 		glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
 	}
 

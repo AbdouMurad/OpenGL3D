@@ -122,6 +122,7 @@ void Scene::Render(Renderer& renderer) {
 	frame.cameraPosition = GetMainCamera()->GetPosition();
 	for (std::unique_ptr<GameObject>& object : objects) {
 		auto* light = object.get()->GetComponent<PointLightComponent>();
+		auto* directionalLight = object.get()->GetComponent<DirectionalLightComponent>();
 		auto* transform = object.get()->GetComponent<TransformComponent>();
 		auto* mesh = object.get()->GetComponent<MeshRenderer>();
 		if (!transform) continue;
@@ -131,6 +132,12 @@ void Scene::Render(Renderer& renderer) {
 				light->color, //write getters and setters
 				light->intensity,
 				light->range
+			});
+		if (directionalLight)
+			frame.directionalLights.push_back({
+				glm::normalize(transform->GetQuat() * glm::vec3(0, 0, -1)), //world forward, same convention as the camera
+				directionalLight->color,
+				directionalLight->intensity
 			});
 		if (mesh) {
 			frame.renderObjects.push_back({

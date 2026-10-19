@@ -78,6 +78,11 @@ void SceneSerializer::Load(const std::string& path, Scene& scene) {
 			const json& lightData = objectData["PointLight"];
 			obj.AddComponent<PointLightComponent>(glm::vec3(lightData["color"][0] / 255.0f, lightData["color"][1] / 255.0f, lightData["color"][2] / 255.0f), lightData["intensity"], lightData["range"]);
 		}
+		if (objectData.contains("DirectionalLight")) {
+			//direction comes from the object's Transform rotation
+			const json& lightData = objectData["DirectionalLight"];
+			obj.AddComponent<DirectionalLightComponent>(glm::vec3(lightData["color"][0] / 255.0f, lightData["color"][1] / 255.0f, lightData["color"][2] / 255.0f), lightData["intensity"]);
+		}
 
 	}
 }

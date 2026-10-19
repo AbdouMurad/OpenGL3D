@@ -74,12 +74,12 @@
 				"position": [ 0, 2, 9 ],
 				"rotation": [ 0, 0, 0 ],
 				"size": [ 1, 1, 1 ]
-			},
-			"PointLight": {
-				"color": [ 255, 255, 255 ],
-				"intensity": 5,
-				"range": 25
-			}
+			}//,
+			//"PointLight": {
+			//	"color": [ 255, 255, 255 ],
+			//	"intensity": 5,
+			//	"range": 25
+			//}
 
 		},
 		{

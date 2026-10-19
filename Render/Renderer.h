@@ -11,6 +11,12 @@ struct RenderLight {
 	float range;
 };
 
+struct RenderDirectionalLight {
+	glm::vec3 direction; //world space, normalized, the way the light travels
+	glm::vec3 color;
+	float intensity;
+};
+
 struct RenderObject {
 	glm::mat4 transform;
 	ModelHandle modelID;
@@ -19,6 +25,7 @@ struct RenderObject {
 struct RenderFrame {
 	std::vector<RenderObject> renderObjects;
 	std::vector<RenderLight> lights;
+	std::vector<RenderDirectionalLight> directionalLights;
 	glm::mat4 cameraMatrix = glm::mat4(1.0f);
 	glm::vec3 cameraPosition = glm::vec3(0.0f);
 };
