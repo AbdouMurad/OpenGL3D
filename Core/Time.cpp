@@ -35,6 +35,7 @@ float Time::FPS() {
 float Time::FrameTimeMS() {
 	return frameTimeMs;
 }
+//seconds since the window opened, as of this frame (fpsTimer resets every half second, so it can't be used here)
 float Time::TotalTime() {
-	return fpsTimer;
+	return lastFrame;
 }

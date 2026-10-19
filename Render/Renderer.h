@@ -4,6 +4,9 @@
 
 #include "Core/ShaderManager.h"
 #include "GPU/ShadowMap.h"
+#include "Frustum.h"
+
+class GrassField;
 
 struct RenderLight {
 	glm::vec3 position; //switch to mat4
@@ -23,18 +26,33 @@ struct RenderObject {
 	ModelHandle modelID;
 };
 
+struct RenderGrass {
+	GrassField* field;
+	glm::vec3 pusherPosition; //grass bends away from this point
+	float pusherRadius;		  //0 = nothing pushes it
+};
+
 struct RenderFrame {
 	std::vector<RenderObject> renderObjects;
 	std::vector<RenderLight> lights;
 	std::vector<RenderDirectionalLight> directionalLights;
+	std::vector<RenderGrass> grass;
 	glm::mat4 cameraMatrix = glm::mat4(1.0f);
 	glm::vec3 cameraPosition = glm::vec3(0.0f);
+	float time = 0.0f; //seconds, drives the wind
+
+	//how the world looks (see Scene::Environment)
+	bool grayWorld = false;
+	glm::vec3 fogColor = glm::vec3(0.0f);
+	float fogDensity = 0.0f;
 };
 
 struct RenderStats {
 	int objectsDrawn = 0;
 	int objectsCulled = 0; //outside the camera frustum
 	int objectsInShadowPass = 0; //drawn into the shadow map (inside the light's box)
+	int grassChunksDrawn = 0;
+	int grassBladesDrawn = 0;
 };
 
 class Renderer {
@@ -59,6 +77,15 @@ private:
 	RenderStats stats;
 
 	void DrawNode(Node* node, const glm::mat4& parentTransformComponent);
+
+	//uniforms shared by the pbr and grass shaders
+	void SetPointLights(Shader& shader, const std::vector<RenderLight>& lights);
+	void SetDirectionalLights(Shader& shader);
+	void SetEnvironment(Shader& shader);
+
+	//---grass---
+	Shader* grassShader = nullptr;
+	void DrawGrass(const RenderGrass& grass, const Frustum& frustum);
 
 	//---shadows---
 	ShadowMap shadowMap;

@@ -53,7 +53,8 @@ void Application::Run(Game& game) {
 		}
 
 		//glClearColor(0.529, 0.808f, 0.922f, 1.0f);
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		const glm::vec3& sky = game.scene.environment.skyColor;
+		glClearColor(sky.r, sky.g, sky.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		game.Update(dt);

@@ -59,6 +59,25 @@ uniform DirectionalLight u_directionalLights[MAX_DIRECTIONAL_LIGHTS];
 uniform bool u_hasShadowMap;
 uniform sampler2DArray u_shadowMap;
 
+//gray world: surfaces lose their colour except within reach of a point light
+//fog: fades to u_fogColor with distance from the camera (density 0 = off)
+uniform bool u_grayWorld;
+uniform vec3 u_fogColor;
+uniform float u_fogDensity;
+
+//how much of the surface's own colour shows: 1 = full colour, 0 = grayscale
+//full colour for the inner 70% of a light's range, then a short fade to gray by 90%
+//(a narrow fade = a crisp edge between the coloured circle and the gray world)
+float colorReveal() {
+	if (!u_grayWorld) return 1.0;
+	float reveal = 0.0;
+	for (int i = 0; i < u_lightCount; ++i) {
+		float d = length(u_lights[i].position - FragPos);
+		reveal = max(reveal, 1.0 - smoothstep(u_lights[i].range * 0.7, u_lights[i].range * 0.9, d));
+	}
+	return reveal;
+}
+
 //0 = fully lit, 1 = fully in shadow. N = surface normal, L = direction towards the light
 float shadowFactor(vec3 N, vec3 L) {
 	if (!u_hasShadowMap) return 0.0;
@@ -177,6 +196,15 @@ void main() {
 	if (u_hasBaseColorTex) {
 		albedo *= texture(u_baseColorTex, TexCoord);
 	}
+	//luminance (how bright it looks) keeps the gray version as light/dark as the coloured one
+	float luminance = dot(albedo.rgb, vec3(0.2126, 0.7152, 0.0722));
+	if (u_grayWorld) {
+		//coloured areas get extra saturation (pushed past the original colour), gray areas are darkened
+		//-> the lit circles stand out more against the gray
+		float reveal = colorReveal();
+		vec3 saturated = max(mix(vec3(luminance), albedo.rgb, 1.45), 0.0);
+		albedo.rgb = mix(vec3(luminance) * 0.6, saturated, reveal);
+	}
 
 	float metallic = u_metallic;
 	float roughness = u_roughness;
@@ -233,6 +261,10 @@ void main() {
 
 	
 	vec3 finalColor = lighting + ambient + emissive;
+	if (u_fogDensity > 0.0) {
+		float fogAmount = 1.0 - exp(-pow(length(u_cameraPos - FragPos) * u_fogDensity, 2.0));
+		finalColor = mix(finalColor, u_fogColor, fogAmount);
+	}
 	FragColor = vec4(finalColor, albedo.a);
 }
 

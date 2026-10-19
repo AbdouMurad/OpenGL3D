@@ -9,7 +9,8 @@ enum TextureSlot {
 	NORMAL_SLOT = 1,
 	METALLIC_ROUGHNESS_SLOT = 2,
 	EMISSIVE_SLOT = 3,
-	SHADOW_MAP_SLOT = 4
+	SHADOW_MAP_SLOT = 4,
+	GRASS_TRAIL_SLOT = 5
 };
 enum class TextureType
 {

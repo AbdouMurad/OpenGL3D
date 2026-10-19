@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "GrassField.h"
 #include <cstddef>
 
 bool Renderer::init() {
@@ -9,6 +10,7 @@ bool Renderer::init() {
 
 	shadowShader = &AssetManager::Get().GetShader(AssetManager::Get().LoadShader("assets/shaders/shadow.vert", "assets/shaders/shadow.frag"));
 	shadowDebugShader = &AssetManager::Get().GetShader(AssetManager::Get().LoadShader("assets/shaders/shadow_debug.vert", "assets/shaders/shadow_debug.frag"));
+	grassShader = &AssetManager::Get().GetShader(AssetManager::Get().LoadShader("assets/shaders/grass.vert", "assets/shaders/grass.frag"));
 
 	//debug quad covering all of clip space, uv 0..1. DrawShadowMapDebug shrinks it into a corner with the viewport
 	//counter clockwise, so face culling keeps it
@@ -56,6 +58,10 @@ void Renderer::Render(RenderFrame& frame) {
 		}
 		++stats.objectsDrawn;
 		Renderer::DrawNode(&model.root, object.transform);
+	}
+
+	for (const RenderGrass& grass : currentFrame->grass) {
+		DrawGrass(grass, frustum);
 	}
 
 	if (showShadowMap && shadowsReady) {
@@ -217,32 +223,115 @@ void Renderer::DrawNode(Node* node, const glm::mat4& parentTransformMatrix) {
 			{
 				return glm::distance2(a.position, position) < glm::distance2(b.position, position);
 			});
-		int lightCount = static_cast<int>(std::min<size_t>(lights.size(), 16));
-		shader.setInt("u_lightCount", lightCount);
-		for (int i = 0; i < lightCount; ++i) {
-			std::string base = "u_lights[" + std::to_string(i) + "]";
-
-			shader.setVec3(base + ".position", lights[i].position);
-			shader.setVec3(base + ".color", lights[i].color);
-			shader.setFloat(base + ".intensity", lights[i].intensity);
-			shader.setFloat(base + ".range", lights[i].range);
-		}
-
-		//directional lights reach everything -> no distance filtering or sorting
-		int directionalCount = static_cast<int>(std::min<size_t>(currentFrame->directionalLights.size(), 4));
-		shader.setInt("u_directionalLightCount", directionalCount);
-		for (int i = 0; i < directionalCount; ++i) {
-			const RenderDirectionalLight& light = currentFrame->directionalLights[i];
-			std::string base = "u_directionalLights[" + std::to_string(i) + "]";
-
-			shader.setVec3(base + ".direction", light.direction);
-			shader.setVec3(base + ".color", light.color);
-			shader.setFloat(base + ".intensity", light.intensity);
-		}
+		SetPointLights(shader, lights);
+		SetDirectionalLights(shader);
+		SetEnvironment(shader);
 		glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
 	}
 
 	for (auto& c : node->children) {
 		DrawNode(c.get(), worldTransformMatrix);
 	}
+}
+
+//nearest first: only the first 16 fit in the shader
+void Renderer::SetPointLights(Shader& shader, const std::vector<RenderLight>& lights) {
+	int lightCount = static_cast<int>(std::min<size_t>(lights.size(), 16));
+	shader.setInt("u_lightCount", lightCount);
+	for (int i = 0; i < lightCount; ++i) {
+		std::string base = "u_lights[" + std::to_string(i) + "]";
+
+		shader.setVec3(base + ".position", lights[i].position);
+		shader.setVec3(base + ".color", lights[i].color);
+		shader.setFloat(base + ".intensity", lights[i].intensity);
+		shader.setFloat(base + ".range", lights[i].range);
+	}
+}
+
+//directional lights reach everything -> no distance filtering or sorting
+void Renderer::SetDirectionalLights(Shader& shader) {
+	int directionalCount = static_cast<int>(std::min<size_t>(currentFrame->directionalLights.size(), 4));
+	shader.setInt("u_directionalLightCount", directionalCount);
+	for (int i = 0; i < directionalCount; ++i) {
+		const RenderDirectionalLight& light = currentFrame->directionalLights[i];
+		std::string base = "u_directionalLights[" + std::to_string(i) + "]";
+
+		shader.setVec3(base + ".direction", light.direction);
+		shader.setVec3(base + ".color", light.color);
+		shader.setFloat(base + ".intensity", light.intensity);
+	}
+}
+
+void Renderer::SetEnvironment(Shader& shader) {
+	shader.setInt("u_grayWorld", currentFrame->grayWorld ? 1 : 0);
+	shader.setVec3("u_fogColor", currentFrame->fogColor);
+	shader.setFloat("u_fogDensity", currentFrame->fogDensity);
+}
+
+//-------------------Grass-----------------
+//one instanced draw per visible chunk. each chunk gets the lights that reach its box,
+//and far chunks draw only part of their blades (they're stored in random order, so it thins out evenly)
+void Renderer::DrawGrass(const RenderGrass& grass, const Frustum& frustum) {
+	GrassField& field = *grass.field;
+	Shader& shader = *grassShader;
+	shader.Activate();
+
+	shader.setMat4("camMatrix", currentFrame->cameraMatrix);
+	shader.setVec3("u_cameraPos", currentFrame->cameraPosition);
+	shader.setInt("u_shadowMap", SHADOW_MAP_SLOT);
+	shader.setInt("u_hasShadowMap", shadowsThisFrame ? 1 : 0);
+	shader.setMat4("u_lightMatrix", lightMatrix);
+
+	shader.setFloat("u_time", currentFrame->time);
+	shader.setVec2("u_windDirection", field.windDirection);
+	shader.setFloat("u_windStrength", field.windStrength);
+	shader.setVec3("u_pusherPosition", grass.pusherPosition);
+	shader.setFloat("u_pusherRadius", grass.pusherRadius);
+	shader.setVec3("u_rootColor", field.rootColor);
+	glActiveTexture(GL_TEXTURE0 + GRASS_TRAIL_SLOT);
+	glBindTexture(GL_TEXTURE_2D, field.GetTrailTexture());
+	shader.setInt("u_trailMap", GRASS_TRAIL_SLOT);
+	shader.setVec4("u_trailRect", field.GetTrailRect());
+	shader.setFloat("u_trailRecoverTime", field.trailRecoverTime);
+	shader.setVec3("u_tipColor", field.tipColor);
+	SetDirectionalLights(shader);
+	SetEnvironment(shader);
+
+	//blades are flat strips seen from both sides
+	glDisable(GL_CULL_FACE);
+
+	constexpr float fullDetailDistance = 20.0f;
+	constexpr float lowDetailDistance = 60.0f;
+	constexpr float lowDetailFraction = 0.35f;
+
+	std::vector<RenderLight> lights;
+	for (const GrassChunk& chunk : field.GetChunks()) {
+		if (chunk.count == 0 || !frustum.IsVisible(chunk.bounds)) continue;
+
+		//the light reaches the chunk if the box's closest point to it is within its range
+		lights.clear();
+		for (const RenderLight& light : currentFrame->lights) {
+			glm::vec3 closest = glm::clamp(light.position, chunk.bounds.min, chunk.bounds.max);
+			if (glm::distance2(closest, light.position) < light.range * light.range) lights.push_back(light);
+		}
+		glm::vec3 chunkCenter = (chunk.bounds.min + chunk.bounds.max) * 0.5f;
+		std::sort(lights.begin(), lights.end(), [chunkCenter](const RenderLight& a, const RenderLight& b)
+			{
+				return glm::distance2(a.position, chunkCenter) < glm::distance2(b.position, chunkCenter);
+			});
+		SetPointLights(shader, lights);
+
+		glm::vec3 closestToCamera = glm::clamp(currentFrame->cameraPosition, chunk.bounds.min, chunk.bounds.max);
+		float distance = glm::distance(closestToCamera, currentFrame->cameraPosition);
+		float t = glm::clamp((distance - fullDetailDistance) / (lowDetailDistance - fullDetailDistance), 0.0f, 1.0f);
+		int count = static_cast<int>(chunk.count * glm::mix(1.0f, lowDetailFraction, t));
+		if (count <= 0) continue;
+
+		glBindVertexArray(chunk.vao.ID);
+		glDrawElementsInstanced(GL_TRIANGLES, field.GetIndexCount(), GL_UNSIGNED_INT, 0, count);
+		++stats.grassChunksDrawn;
+		stats.grassBladesDrawn += count;
+	}
+	glBindVertexArray(0);
+	glEnable(GL_CULL_FACE);
 }

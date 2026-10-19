@@ -1,6 +1,7 @@
 #include "Core/Engine.h"
 #include "ThirdPersonCamera.h"
 #include "ThirdPersonController.h"
+#include "Components/GrassComponent.h"
 #include <random>
 
 class PlayerController : public Component {
@@ -372,8 +373,209 @@ public:
     }
 };
 
+//makes a point light's brightness waver a little, like a flame. the light stays where it is
+class LanternFlicker : public Component {
+    PointLightComponent* light = nullptr;
+    float baseIntensity = 0.0f;
+    float time;
+public:
+    LanternFlicker(float startTime) : time(startTime) {} //different start times -> lanterns don't flicker in sync
+
+    void Start() override {
+        light = owner->GetComponent<PointLightComponent>();
+        if (light) baseIntensity = light->intensity;
+    }
+    void Update(float dt) override {
+        if (!light) return;
+        time += dt;
+        light->intensity = baseIntensity * (0.92f + 0.05f * std::sin(time * 7.3f) + 0.03f * std::sin(time * 13.7f + 1.1f));
+    }
+};
+
+//open grassy field in a grayscale world. colour only exists inside the lanterns' light
+//balls can be pushed around: roll a gray one into a lantern's light and it shows its colour
+class GrayField : public Game {
+    static constexpr float fieldHalfSize = 50.0f; //walkable square is 100 x 100 m
+    std::vector<glm::vec2> lanternSpots;
+
+    struct LanternColor { const char* orb; glm::vec3 color; };
+    static constexpr LanternColor lanternColors[6] = {
+        { "amber",   { 1.0f, 0.55f, 0.20f } },
+        { "teal",    { 0.20f, 0.90f, 0.75f } },
+        { "magenta", { 0.95f, 0.25f, 0.75f } },
+        { "lime",    { 0.55f, 1.0f, 0.20f } },
+        { "sky",     { 0.30f, 0.55f, 1.0f } },
+        { "gold",    { 1.0f, 0.85f, 0.35f } },
+    };
+    static constexpr const char* paints[8] = { "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink" };
+
+    static std::string ModelPath(const std::string& name) { return "assets/models/grayfield/" + name + ".gltf"; }
+
+    void CreateLantern(glm::vec2 spot, int colorIndex, float flickerOffset) {
+        const LanternColor& lantern = lanternColors[colorIndex % 6];
+
+        GameObject& pole = scene.CreateObject();
+        pole.SetName("lantern_pole");
+        pole.GetComponent<TransformComponent>()->SetPosition({ spot.x, 1.2f, spot.y });
+        pole.GetComponent<TransformComponent>()->SetSize({ 0.15f, 2.4f, 0.15f });
+        pole.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel(ModelPath("pole")));
+        pole.AddComponent<RigidBodyComponent>()->ToggleStatic();
+        pole.AddComponent<ColliderComponent>(SHAPE::Box)->SetHalfExtent({ 0.1f, 1.2f, 0.1f });
+
+        //the orb glows in its own colour (emissive, never grayed out) and carries the light
+        GameObject& orb = scene.CreateObject();
+        orb.SetName(std::string("lantern_") + lantern.orb);
+        orb.GetComponent<TransformComponent>()->SetPosition({ spot.x, 2.65f, spot.y });
+        orb.GetComponent<TransformComponent>()->SetSize(glm::vec3(0.35f));
+        orb.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel(ModelPath(std::string("orb_") + lantern.orb)));
+        //light tinted towards the orb's colour, but not fully: objects should still show their own colours
+        glm::vec3 lightColor = glm::mix(glm::vec3(1.0f), lantern.color, 0.6f);
+        orb.AddComponent<PointLightComponent>(lightColor, 5.0f, 9.0f);
+        orb.AddComponent<LanternFlicker>(flickerOffset);
+
+        lanternSpots.push_back(spot);
+    }
+
+    //static painted block, random size and turn, standing on the ground
+    void CreateBlock(glm::vec2 spot, std::mt19937& rng) {
+        std::uniform_real_distribution<float> footprint(0.8f, 2.2f), tall(1.0f, 2.8f), turn(0.0f, 90.0f);
+        std::uniform_int_distribution<int> paint(0, 7);
+        glm::vec3 size(footprint(rng), tall(rng), footprint(rng));
+
+        GameObject& block = scene.CreateObject();
+        block.SetName("block");
+        TransformComponent* transform = block.GetComponent<TransformComponent>();
+        transform->SetPosition({ spot.x, size.y * 0.5f, spot.y });
+        transform->SetSize(size);
+        transform->SetRotation(glm::vec3(0.0f, turn(rng), 0.0f));
+        block.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel(ModelPath(std::string("block_") + paints[paint(rng)])));
+        block.AddComponent<RigidBodyComponent>()->ToggleStatic();
+        block.AddComponent<ColliderComponent>(SHAPE::Box)->SetHalfExtent(size * 0.5f);
+    }
+
+    //light painted ball the player can push around
+    void CreateBall(glm::vec2 spot, std::mt19937& rng) {
+        std::uniform_real_distribution<float> radiusRange(0.3f, 0.6f);
+        std::uniform_int_distribution<int> paint(0, 7);
+        float radius = radiusRange(rng);
+
+        GameObject& ball = scene.CreateObject();
+        ball.SetName("ball");
+        ball.GetComponent<TransformComponent>()->SetPosition({ spot.x, radius + 0.05f, spot.y });
+        ball.GetComponent<TransformComponent>()->SetSize(glm::vec3(radius * 2.0f)); //model is 1 across
+        ball.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel(ModelPath(std::string("ball_") + paints[paint(rng)])));
+        RigidBodyComponent* rb = ball.AddComponent<RigidBodyComponent>();
+        rb->SetMass(1.5f);
+        rb->SetRestitution(0.3f);
+        ball.AddComponent<ColliderComponent>(SHAPE::Sphere)->SetRadius(radius);
+    }
+
+    //somewhere for a block/ball that isn't on top of the spawn point or a lantern pole
+    bool IsFree(glm::vec2 spot, float clearance) const {
+        if (glm::length(spot) < 3.0f + clearance) return false;
+        for (const glm::vec2& lantern : lanternSpots)
+            if (glm::distance(spot, lantern) < 1.0f + clearance) return false;
+        return true;
+    }
+
+public:
+    void Start(float width, float height) override {
+        lanternSpots.clear();
+        std::mt19937 rng(7); //fixed seed: same layout every run (and after Ctrl+R)
+        std::uniform_real_distribution<float> unit(0.0f, 1.0f);
+
+        scene.environment.grayWorld = true;
+        scene.environment.skyColor = glm::vec3(0.035f, 0.037f, 0.042f);
+        scene.environment.fogDensity = 0.028f;
+
+        //---- ground ----
+        //one big collider, but the visible ground is 10 m tiles: the renderer picks lights per object by its centre,
+        //so one 100 m mesh would only get the lanterns near the middle
+        GameObject& ground = scene.CreateObject();
+        ground.SetName("ground");
+        ground.GetComponent<TransformComponent>()->SetPosition({ 0.0f, -0.5f, 0.0f });
+        ground.AddComponent<RigidBodyComponent>()->ToggleStatic();
+        ground.AddComponent<ColliderComponent>(SHAPE::Box)->SetHalfExtent({ fieldHalfSize, 0.5f, fieldHalfSize });
+
+        ModelHandle groundTile = AssetManager::Get().LoadModel(ModelPath("ground"));
+        constexpr float tileSize = 10.0f;
+        for (float x = -fieldHalfSize + tileSize * 0.5f; x < fieldHalfSize; x += tileSize) {
+            for (float z = -fieldHalfSize + tileSize * 0.5f; z < fieldHalfSize; z += tileSize) {
+                GameObject& tile = scene.CreateObject();
+                tile.GetComponent<TransformComponent>()->SetPosition({ x, -0.1f, z });
+                tile.GetComponent<TransformComponent>()->SetSize({ tileSize, 0.2f, tileSize });
+                tile.AddComponent<MeshRenderer>(groundTile);
+            }
+        }
+
+        //---- moon: dim, white, casts the only shadows ----
+        GameObject& moon = scene.CreateObject();
+        moon.SetName("moon");
+        moon.GetComponent<TransformComponent>()->SetRotation(glm::vec3(-35.0f, 40.0f, 0.0f));
+        moon.AddComponent<DirectionalLightComponent>(glm::vec3(1.0f), 0.6f);
+
+        //---- lanterns: one close to the spawn, the rest on a jittered grid across the field ----
+        CreateLantern({ 4.0f, -6.0f }, 0, 0.0f);
+        int colorIndex = 1;
+        for (float gx = -33.0f; gx <= 33.0f; gx += 22.0f) {
+            for (float gz = -33.0f; gz <= 33.0f; gz += 22.0f) {
+                glm::vec2 spot(gx + (unit(rng) - 0.5f) * 10.0f, gz + (unit(rng) - 0.5f) * 10.0f);
+                if (glm::distance(spot, glm::vec2(4.0f, -6.0f)) < 10.0f) continue; //too close to the first one
+                CreateLantern(spot, colorIndex++, unit(rng) * 10.0f);
+            }
+        }
+
+        //---- things to find: a few inside every lantern's light, more out in the dark ----
+        for (size_t i = 0; i < lanternSpots.size(); ++i) {
+            glm::vec2 lantern = lanternSpots[i];
+            for (int k = 0; k < 3; ++k) {
+                float angle = unit(rng) * 6.2831853f;
+                glm::vec2 spot = lantern + glm::vec2(std::cos(angle), std::sin(angle)) * glm::mix(2.5f, 5.5f, unit(rng));
+                if (!IsFree(spot, 1.2f)) continue;
+                if (k == 2) CreateBall(spot, rng);
+                else CreateBlock(spot, rng);
+            }
+        }
+        for (int i = 0; i < 70; ++i) {
+            glm::vec2 spot((unit(rng) * 2.0f - 1.0f) * (fieldHalfSize - 3.0f), (unit(rng) * 2.0f - 1.0f) * (fieldHalfSize - 3.0f));
+            if (!IsFree(spot, 1.2f)) continue;
+            if (unit(rng) < 0.55f) CreateBlock(spot, rng);
+            else CreateBall(spot, rng);
+        }
+
+        //---- player ----
+        GameObject& player = scene.CreateObject();
+        player.SetName("player");
+        player.GetComponent<TransformComponent>()->SetPosition({ 0.0f, 1.0f, 0.0f });
+        player.AddComponent<MeshRenderer>(AssetManager::Get().LoadModel(ModelPath("player")));
+        RigidBodyComponent* playerRb = player.AddComponent<RigidBodyComponent>();
+        playerRb->SetConstraint(RigidBodyConstraints::FreezeX | RigidBodyConstraints::FreezeY | RigidBodyConstraints::FreezeZ);
+        player.AddComponent<ColliderComponent>(SHAPE::Box)->SetHalfExtent(glm::vec3(0.5f));
+
+        //---- camera ----
+        GameObject& camera = scene.CreateObject();
+        camera.SetName("camera");
+        CameraComponent* cameraComponent = camera.AddComponent<CameraComponent>(width, height);
+        cameraComponent->SetViewport(width, height);
+        cameraComponent->farPlane = 150.0f;
+        ThirdPersonCamera* followCamera = camera.AddComponent<ThirdPersonCamera>(&scene, &player);
+        scene.SetMainCamera(camera);
+        player.AddComponent<ThirdPersonController>(&scene, followCamera);
+
+        //---- grass over the whole field, parted by the player ----
+        GrassSettings grass;
+        grass.halfSize = glm::vec2(fieldHalfSize);
+        grass.density = 60.0f;  //~600k blades over the field, thinned out with distance by the renderer
+        grass.bladeWidth = 0.09f;
+        GameObject& field = scene.CreateObject();
+        field.SetName("grass");
+        field.AddComponent<GrassComponent>(grass, &player);
+    }
+};
+
 int main() {
-    LevelLoader game;
+    GrayField game;
+    //LevelLoader game;
     //BallDisplay game;
     //Shooter game;4
     Application app = Application(1920, 1080, "GAME");

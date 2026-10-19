@@ -1,0 +1,507 @@
+{
+ "asset": {
+  "version": "2.0",
+  "generator": "grayfield player script"
+ },
+ "buffers": [
+  {
+   "byteLength": 840,
+   "uri": "../cube.bin"
+  },
+  {
+   "byteLength": 69248,
+   "uri": "../sphere_red.bin"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 0,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 288,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 192,
+   "byteOffset": 576,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 72,
+   "byteOffset": 768,
+   "target": 34963
+  },
+  {
+   "buffer": 1,
+   "byteLength": 23808,
+   "byteOffset": 0,
+   "target": 34962
+  },
+  {
+   "buffer": 1,
+   "byteLength": 23808,
+   "byteOffset": 23808,
+   "target": 34962
+  },
+  {
+   "buffer": 1,
+   "byteLength": 15872,
+   "byteOffset": 47616,
+   "target": 34962
+  },
+  {
+   "buffer": 1,
+   "byteLength": 5760,
+   "byteOffset": 63488,
+   "target": 34963
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    1,
+    1,
+    1
+   ],
+   "min": [
+    -1,
+    -1,
+    -1
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 3,
+   "componentType": 5123,
+   "count": 36,
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 4,
+   "componentType": 5126,
+   "count": 1984,
+   "max": [
+    0.9999997019767761,
+    1,
+    0.9999993443489075
+   ],
+   "min": [
+    -0.9999990463256836,
+    -1,
+    -1
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 5,
+   "componentType": 5126,
+   "count": 1984,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 6,
+   "componentType": 5126,
+   "count": 1984,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 7,
+   "componentType": 5123,
+   "count": 2880,
+   "type": "SCALAR"
+  }
+ ],
+ "meshes": [
+  {
+   "name": "body",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2
+     },
+     "indices": 3,
+     "material": 0
+    }
+   ]
+  },
+  {
+   "name": "scarf",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2
+     },
+     "indices": 3,
+     "material": 2
+    }
+   ]
+  },
+  {
+   "name": "scarf_end",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2
+     },
+     "indices": 3,
+     "material": 2
+    }
+   ]
+  },
+  {
+   "name": "head",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 4,
+      "NORMAL": 5,
+      "TEXCOORD_0": 6
+     },
+     "indices": 7,
+     "material": 1
+    }
+   ]
+  },
+  {
+   "name": "eye_left",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 4,
+      "NORMAL": 5,
+      "TEXCOORD_0": 6
+     },
+     "indices": 7,
+     "material": 5
+    }
+   ]
+  },
+  {
+   "name": "eye_right",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 4,
+      "NORMAL": 5,
+      "TEXCOORD_0": 6
+     },
+     "indices": 7,
+     "material": 5
+    }
+   ]
+  },
+  {
+   "name": "backpack",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2
+     },
+     "indices": 3,
+     "material": 3
+    }
+   ]
+  },
+  {
+   "name": "boot_left",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2
+     },
+     "indices": 3,
+     "material": 4
+    }
+   ]
+  },
+  {
+   "name": "boot_right",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2
+     },
+     "indices": 3,
+     "material": 4
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "name": "body",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.95,
+     0.32,
+     0.08,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.55
+   }
+  },
+  {
+   "name": "head",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.95,
+     0.8,
+     0.62,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.6
+   }
+  },
+  {
+   "name": "scarf",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.08,
+     0.45,
+     0.95,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.5
+   }
+  },
+  {
+   "name": "pack",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.95,
+     0.78,
+     0.1,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.6
+   }
+  },
+  {
+   "name": "boots",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.12,
+     0.08,
+     0.06,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.8
+   }
+  },
+  {
+   "name": "eyes",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.6,
+     0.95,
+     1.0,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.3
+   },
+   "emissiveFactor": [
+    0.6,
+    0.95,
+    1.0
+   ],
+   "extensions": {
+    "KHR_materials_emissive_strength": {
+     "emissiveStrength": 4.0
+    }
+   }
+  }
+ ],
+ "nodes": [
+  {
+   "name": "body",
+   "mesh": 0,
+   "translation": [
+    0,
+    -0.13,
+    0
+   ],
+   "scale": [
+    0.3,
+    0.27,
+    0.24
+   ]
+  },
+  {
+   "name": "scarf",
+   "mesh": 1,
+   "translation": [
+    0,
+    0.1,
+    0
+   ],
+   "scale": [
+    0.32,
+    0.05,
+    0.26
+   ]
+  },
+  {
+   "name": "scarf_end",
+   "mesh": 2,
+   "translation": [
+    0.14,
+    -0.02,
+    0.27
+   ],
+   "scale": [
+    0.05,
+    0.12,
+    0.03
+   ]
+  },
+  {
+   "name": "head",
+   "mesh": 3,
+   "translation": [
+    0,
+    0.29,
+    0
+   ],
+   "scale": [
+    0.22,
+    0.22,
+    0.22
+   ]
+  },
+  {
+   "name": "eye_left",
+   "mesh": 4,
+   "translation": [
+    -0.08,
+    0.31,
+    -0.19
+   ],
+   "scale": [
+    0.04,
+    0.05,
+    0.04
+   ]
+  },
+  {
+   "name": "eye_right",
+   "mesh": 5,
+   "translation": [
+    0.08,
+    0.31,
+    -0.19
+   ],
+   "scale": [
+    0.04,
+    0.05,
+    0.04
+   ]
+  },
+  {
+   "name": "backpack",
+   "mesh": 6,
+   "translation": [
+    0,
+    -0.08,
+    0.3
+   ],
+   "scale": [
+    0.18,
+    0.17,
+    0.07
+   ]
+  },
+  {
+   "name": "boot_left",
+   "mesh": 7,
+   "translation": [
+    -0.13,
+    -0.44,
+    -0.03
+   ],
+   "scale": [
+    0.09,
+    0.06,
+    0.13
+   ]
+  },
+  {
+   "name": "boot_right",
+   "mesh": 8,
+   "translation": [
+    0.13,
+    -0.44,
+    -0.03
+   ],
+   "scale": [
+    0.09,
+    0.06,
+    0.13
+   ]
+  },
+  {
+   "name": "player",
+   "children": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ]
+  }
+ ],
+ "scene": 0,
+ "scenes": [
+  {
+   "nodes": [
+    9
+   ]
+  }
+ ],
+ "extensionsUsed": [
+  "KHR_materials_emissive_strength"
+ ]
+}

@@ -15,6 +15,13 @@ class RenderLight;
 class RenderObject;
 class RenderFrame;
 
+//how the whole world looks, set by the game in Start(). reset by Clear()
+struct Environment {
+	glm::vec3 skyColor = glm::vec3(0.0f); //background, also what fog fades into
+	float fogDensity = 0.0f;			  //0 = no fog. ~0.03 = gone at about 60 m
+	bool grayWorld = false;				  //everything grayscale except where point lights reach
+};
+
 class Scene {
 	std::vector<std::unique_ptr<GameObject>> objects;
 	GameObject* mainCamera = nullptr;
@@ -25,6 +32,7 @@ class Scene {
 	float physicsAccumulator = 0.0f; //frame time not yet simulated (fixed timestep)
 public:
 	EventBus eventBus;
+	Environment environment;
 	GameObject& GetObject(ObjectHandle id);
 	GameObject& CreateObject();
 	GameObject& CreateObject(ObjectHandle i);

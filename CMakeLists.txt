@@ -34,6 +34,8 @@ add_executable(OpenGL3D
     Render/DebugRender.cpp
     Render/Frustum.h
     Render/Frustum.cpp
+    Render/GrassField.h
+    Render/GrassField.cpp
 
     Core/Engine.cpp
     Core/Input.cpp
@@ -55,6 +57,7 @@ add_executable(OpenGL3D
     Components/GameObject.cpp
     Components/Lights.h
     Components/Lights.cpp
+    Components/GrassComponent.h
 
     Physics/RigidBody.h
     Physics/RigidBody.cpp

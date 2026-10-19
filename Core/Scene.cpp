@@ -1,5 +1,7 @@
 #include "Scene.h"
 #include "Render/DebugRender.h"
+#include "Components/GrassComponent.h"
+#include "Core/Time_.h"
 #include <cmath>
 #include <algorithm>
 
@@ -56,6 +58,7 @@ void Scene::Clear() {
 	eventBus.Clear();
 	objects.clear();
 	mainCamera = nullptr;
+	environment = Environment();
 	nextID = 1;
 	dirtyScene = false;
 	physicsAccumulator = 0.0f;
@@ -120,6 +123,10 @@ void Scene::Render(Renderer& renderer) {
 	GetMainCamera()->UpdateMatrix();
 	frame.cameraMatrix = GetMainCamera()->cameraMatrix;
 	frame.cameraPosition = GetMainCamera()->GetPosition();
+	frame.time = Time::TotalTime();
+	frame.grayWorld = environment.grayWorld;
+	frame.fogColor = environment.skyColor;
+	frame.fogDensity = environment.fogDensity;
 	for (std::unique_ptr<GameObject>& object : objects) {
 		auto* light = object.get()->GetComponent<PointLightComponent>();
 		auto* directionalLight = object.get()->GetComponent<DirectionalLightComponent>();
@@ -139,6 +146,10 @@ void Scene::Render(Renderer& renderer) {
 				directionalLight->color,
 				directionalLight->intensity
 			});
+		if (auto* grass = object.get()->GetComponent<GrassComponent>()) {
+			glm::vec3 pusherPosition = grass->pusher ? grass->pusher->GetComponent<TransformComponent>()->GetPosition() : glm::vec3(0.0f);
+			frame.grass.push_back({ &grass->GetField(), pusherPosition, grass->pusher ? grass->pushRadius : 0.0f });
+		}
 		if (mesh) {
 			frame.renderObjects.push_back({
 				transform->GetMatrix(),
